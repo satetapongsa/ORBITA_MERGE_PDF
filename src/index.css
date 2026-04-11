@@ -374,3 +374,13 @@ h1 { font-size: 4.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5re
   background: radial-gradient(circle at center, transparent 0%, rgba(5,6,11,0.4) 100%);
   pointer-events: none;
 }
+
+.trust-badges-row { display: flex; justify-content: center; gap: 2.5rem; margin: 3rem 0; flex-wrap: wrap; }
+.trust-item { display: flex; align-items: center; gap: 0.75rem; color: #94a3b8; font-size: 0.95rem; font-weight: 500; }
+.trust-item span { color: rgba(255,255,255,1); }
+
+footer { margin-top: 8rem; padding: 6rem 2rem 4rem; border-top: 1px solid var(--border-color); text-align: center; background: rgba(0,0,0,0.2); }
+.footer-links { display: flex; justify-content: center; gap: 3rem; margin-bottom: 3rem; }
+.footer-link { color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: 0.3s; font-weight: 500; }
+.footer-link:hover { color: var(--primary); }
+.copyright { color: var(--text-muted); font-size: 14px; opacity: 0.4; }

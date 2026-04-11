@@ -8,9 +8,9 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 
-import { 
-  FilePlus, ArrowLeft, Download, Trash2, GripVertical, Image as ImageIcon, 
-  Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive, 
+import {
+  FilePlus, ArrowLeft, Download, Trash2, GripVertical, Image as ImageIcon,
+  Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive,
   FileImage, FileText, FileSpreadsheet, Globe, Zap, ShieldCheck, Sparkles, Wand2,
   Presentation, X
 } from 'lucide-react';
@@ -46,7 +46,7 @@ export default function App() {
   const [activeTool, setActiveTool] = useState(null);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState([]);
-  const [items, setItems] = useState([]); 
+  const [items, setItems] = useState([]);
   const [status, setStatus] = useState(null);
   const [progress, setProgress] = useState(0);
   const [isPro, setIsPro] = useState(false);
@@ -57,6 +57,7 @@ export default function App() {
   const [imgSettings, setImgSettings] = useState({ format: 'image/jpeg', quality: 0.8, width: 0, height: 0 });
   const [payMethod, setPayMethod] = useState(null); // 'stripe' or 'promptpay'
   const [payStep, setPayStep] = useState('plans'); // 'plans', 'checkout', 'success'
+  const [promptPayNumber, setPromptPayNumber] = useState('0815018272'); // ใส่เบอร์ของคุณที่นี่
   const [lang, setLang] = useState('th');
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('galaxy_history') || '[]'));
   const fileInputRef = useRef(null);
@@ -116,17 +117,17 @@ export default function App() {
     { id: 'excel-to-pdf', name: 'EXCEL to PDF', icon: <FileSpreadsheet />, color: '#023047', category: 'To PDF', desc: 'Convert XLSX to PDF' },
     { id: 'ppt-to-pdf', name: 'PPT to PDF', icon: <Presentation />, color: '#e63946', category: 'To PDF', desc: 'Convert PPTX to PDF', pro: true },
     { id: 'html-to-pdf', name: 'HTML to PDF', icon: <Globe />, color: '#8ecae6', category: 'To PDF', desc: 'Convert HTML to PDF' },
-    
+
     { id: 'pdf-to-jpg', name: 'PDF to JPG', icon: <ImageIcon />, color: '#fb8500', category: 'From PDF', desc: 'Extract PDF pages as JPG' },
     { id: 'pdf-to-img', name: 'PDF to IMAGES', icon: <ImageIcon />, color: '#118ab2', category: 'From PDF', desc: 'Extract pages as ZIP' },
     { id: 'pdf-to-word', name: 'PDF to WORD', icon: <FileText />, color: '#219ebc', category: 'From PDF', desc: 'Extract text to Word', pro: true },
     { id: 'pdf-to-excel', name: 'PDF to EXCEL', icon: <FileSpreadsheet />, color: '#023047', category: 'From PDF', desc: 'Extract tables to Excel', pro: true },
-    
+
     { id: 'pdf-merge', name: 'Merge PDF', icon: <Layers />, color: '#7000ff', category: 'Manage', desc: 'Combine multiple PDFs' },
     { id: 'pdf-reorder', name: 'Organize PDF', icon: <Move />, color: '#00f2ff', category: 'Manage', desc: 'Reorder PDF pages' },
     { id: 'pdf-split', name: 'Split PDF', icon: <GripVertical />, color: '#ff006e', category: 'Manage', desc: 'Extract specific pages' },
     { id: 'pdf-compress', name: 'Compress PDF', icon: <Zap />, color: '#38b000', category: 'Manage', desc: 'Reduce file size', pro: true },
-    
+
     { id: 'pdf-protect', name: 'Protect PDF', icon: <ShieldCheck />, color: '#d00000', category: 'Security', desc: 'Add password to PDF', pro: true },
     { id: 'pdf-unlock', name: 'Unlock PDF', icon: <AlertCircle />, color: '#ff7d00', category: 'Security', desc: 'Remove PDF password', pro: true },
     { id: 'pdf-sign', name: 'Sign PDF', icon: <Wand2 />, color: '#4361ee', category: 'Security', desc: 'Apply digital signature', pro: true },
@@ -203,9 +204,9 @@ export default function App() {
       else if (activeTool === 'jpg-to-png') await runImageTool('image/png');
       else if (activeTool.startsWith('img-')) await runImageTool();
       else setStatus({ type: 'error', message: 'Coming Soon' });
-    } catch (err) { 
-        console.error(err);
-        setStatus({ type: 'error', message: 'Operation Failed' }); 
+    } catch (err) {
+      console.error(err);
+      setStatus({ type: 'error', message: 'Operation Failed' });
     }
     setLoading(false);
   };
@@ -255,9 +256,9 @@ export default function App() {
       if (i > 0) doc.addPage();
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, (canvas.height * 190) / canvas.width);
       document.body.removeChild(el);
-      setProgress(Math.round(((i+1)/files.length)*100));
+      setProgress(Math.round(((i + 1) / files.length) * 100));
     }
-    doc.save('word.pdf'); 
+    doc.save('word.pdf');
     addToHistory('Word to PDF', files.length);
     triggerSuccess();
   };
@@ -270,9 +271,9 @@ export default function App() {
       const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
       if (i > 0) doc.addPage();
       autoTable(doc, { head: [json[0]], body: json.slice(1) });
-      setProgress(Math.round(((i+1)/files.length)*100));
+      setProgress(Math.round(((i + 1) / files.length) * 100));
     }
-    doc.save('excel.pdf'); 
+    doc.save('excel.pdf');
     addToHistory('Excel to PDF', files.length);
     triggerSuccess();
   };
@@ -313,7 +314,7 @@ export default function App() {
         canvas.width = viewport.width; canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         // Use JPG with lower quality for compression
-        const imgUrl = canvas.toDataURL('image/jpeg', 0.5); 
+        const imgUrl = canvas.toDataURL('image/jpeg', 0.5);
         const imgBytes = await (await fetch(imgUrl)).arrayBuffer();
         const img = await pdfDoc.embedJpg(imgBytes);
         const p = pdfDoc.addPage([img.width, img.height]);
@@ -359,7 +360,7 @@ export default function App() {
     }
     const newPdf = await PDFDocument.create();
     const sourceDoc = await PDFDocument.load(await files[0].arrayBuffer());
-    
+
     // Sort selected indices to maintain original order in excerpt
     const selectedIndices = selectedPageIds
       .map(id => items.find(it => it.id === id).originalIndex)
@@ -397,18 +398,18 @@ export default function App() {
       const img = new Image();
       img.src = item.url;
       await new Promise(r => img.onload = r);
-      
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const w = imgSettings.width || img.width;
       const h = imgSettings.height || img.height;
       canvas.width = w; canvas.height = h;
       ctx.drawImage(img, 0, 0, w, h);
-      
+
       const quality = activeTool === 'img-compress' ? 0.5 : 1.0;
       const dataUrl = canvas.toDataURL(targetFormat, quality);
       const ext = targetFormat.split('/')[1];
-      zip.file(`image-${i+1}.${ext}`, dataUrl.split(',')[1], { base64: true });
+      zip.file(`image-${i + 1}.${ext}`, dataUrl.split(',')[1], { base64: true });
       setProgress(Math.round(((i + 1) / items.length) * 100));
     }
     download(await zip.generateAsync({ type: 'blob' }), 'converted-images.zip', 'application/zip');
@@ -466,14 +467,14 @@ export default function App() {
           <span className="logo-text">PDF MERGE</span>
         </div>
         <div className="header-actions">
-           <div className="lang-toggle glass">
-             <button className={lang === 'th' ? 'active' : ''} onClick={() => setLang('th')}>TH</button>
-             <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
-           </div>
-           {!isPro ? (
-             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="pro-btn glass" onClick={() => setShowPayModal(true)}>
-               <Zap size={16} fill="#ffd700" color="#ffd700" /> {t('unlockPro')}
-             </motion.button>
+          <div className="lang-toggle glass">
+            <button className={lang === 'th' ? 'active' : ''} onClick={() => setLang('th')}>TH</button>
+            <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
+          </div>
+          {!isPro ? (
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="pro-btn glass" onClick={() => setShowPayModal(true)}>
+              <Zap size={16} fill="#ffd700" color="#ffd700" /> {t('unlockPro')}
+            </motion.button>
           ) : (
             <div className="pro-active-badge neon-green">
               <ShieldCheck size={16} /> Premium Active
@@ -488,12 +489,12 @@ export default function App() {
             <div className="hero-section">
               <div className="badge">Professional PDF Solutions</div>
               <h1>{t('heroTitle')} <span className="text-gradient">{t('heroGradient')}</span></h1>
-              
+
               <div className="search-box-container">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="search-bar glass">
                   <Wand2 size={20} color="#00f2ff" />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder={t('searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -501,12 +502,27 @@ export default function App() {
                 </motion.div>
               </div>
 
+              <div className="trust-badges-row animate-fade">
+                <div className="trust-item">
+                  <ShieldCheck size={18} color="#00ff88" />
+                  <span>Privacy First (Client-Side)</span>
+                </div>
+                <div className="trust-item">
+                  <Zap size={18} color="#ffd700" />
+                  <span>Ultra-Fast Process</span>
+                </div>
+                <div className="trust-item">
+                  <Globe size={18} color="#00f2ff" />
+                  <span>Global Secure Standards</span>
+                </div>
+              </div>
+
             </div>
             {['To PDF', 'From PDF', 'Manage', 'Security', 'Image Magic'].map(cat => {
-              const filteredTools = tools.filter(t => 
-                t.category === cat && 
-                (t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                 t.desc.toLowerCase().includes(searchTerm.toLowerCase()))
+              const filteredTools = tools.filter(t =>
+                t.category === cat &&
+                (t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  t.desc.toLowerCase().includes(searchTerm.toLowerCase()))
               );
 
               if (filteredTools.length === 0) return null;
@@ -514,10 +530,10 @@ export default function App() {
               return (
                 <div key={cat} className="group-container">
                   <h2 className="cat-title">
-                    {cat === 'To PDF' ? t('toPdf') : 
-                     cat === 'From PDF' ? t('fromPdf') : 
-                     cat === 'Manage' ? t('manage') : 
-                     cat === 'Security' ? t('security') : t('imageMagic')}
+                    {cat === 'To PDF' ? t('toPdf') :
+                      cat === 'From PDF' ? t('fromPdf') :
+                        cat === 'Manage' ? t('manage') :
+                          cat === 'Security' ? t('security') : t('imageMagic')}
                   </h2>
                   <div className="tools-grid-main">
                     {filteredTools.map(t => (
@@ -577,7 +593,7 @@ export default function App() {
                   <div className="split-status">{t('files')}: {selectedPageIds.length}</div>
                 )}
                 {activeTool === 'img-convert' && (
-                  <select value={imgSettings.format} onChange={e => setImgSettings(p => ({...p, format: e.target.value}))} className="glass-input bright">
+                  <select value={imgSettings.format} onChange={e => setImgSettings(p => ({ ...p, format: e.target.value }))} className="glass-input bright">
                     <option value="image/jpeg">To JPG</option>
                     <option value="image/png">To PNG</option>
                     <option value="image/webp">To WebP</option>
@@ -585,8 +601,8 @@ export default function App() {
                 )}
                 {activeTool === 'img-resize' && (
                   <div className="resize-inputs">
-                    <input type="number" placeholder="W" className="glass-input sm" onChange={e => setImgSettings(p => ({...p, width: parseInt(e.target.value)}))} />
-                    <input type="number" placeholder="H" className="glass-input sm" onChange={e => setImgSettings(p => ({...p, height: parseInt(e.target.value)}))} />
+                    <input type="number" placeholder="W" className="glass-input sm" onChange={e => setImgSettings(p => ({ ...p, width: parseInt(e.target.value) }))} />
+                    <input type="number" placeholder="H" className="glass-input sm" onChange={e => setImgSettings(p => ({ ...p, height: parseInt(e.target.value) }))} />
                   </div>
                 )}
               </div>
@@ -615,8 +631,8 @@ export default function App() {
                           {items.map((it, idx) => {
                             const isSelected = selectedPageIds.includes(it.id);
                             return (
-                              <div 
-                                key={it.id} 
+                              <div
+                                key={it.id}
                                 className={`glass page-thumbnail selectable ${isSelected ? 'selected' : ''}`}
                                 onClick={() => setSelectedPageIds(prev => isSelected ? prev.filter(id => id !== it.id) : [...prev, it.id])}
                               >
@@ -638,7 +654,7 @@ export default function App() {
                           <div key={i} className="list-row glass" style={{ position: 'relative', overflow: 'hidden' }}>
                             {pUrl && <div className="file-preview-bg" style={{ backgroundImage: `url(${pUrl})` }}></div>}
                             <div className="list-row-content" style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', padding: '0 1rem' }}>
-                              <FileText size={18} color="white" /> 
+                              <FileText size={18} color="white" />
                               <div className="p-name" style={{ color: 'white', fontWeight: '600', fontSize: '0.95rem' }}>{f.name}</div>
                             </div>
                             <button className="del-btn-icon" style={{ position: 'relative', zIndex: 2, background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer' }} onClick={() => setFiles(p => p.filter((_, idx) => idx !== i))}>
@@ -672,11 +688,11 @@ export default function App() {
       <AnimatePresence>
         {showPayModal && (
           <div className="modal-overlay" onClick={() => { setShowPayModal(false); setPayStep('plans'); }}>
-            <motion.div 
-              initial={{ y: 50, opacity: 0 }} 
-              animate={{ y: 0, opacity: 1 }} 
-              exit={{ y: 50, opacity: 0 }} 
-              className="pay-modal glass" 
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="pay-modal glass"
               onClick={e => e.stopPropagation()}
             >
               {payStep === 'plans' && (
@@ -738,9 +754,16 @@ export default function App() {
                   {payMethod === 'promptpay' && (
                     <div className="qr-checkout glass animate-up">
                       <p>สแกนเพื่อชำระเงิน 350.00 บาท</p>
-                      <div className="qr-placeholder">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://merge-galaxy.vercel.app/" alt="QR Code" />
+                      <div className="qr-placeholder" style={{ border: '4px solid #fff', padding: '10px', borderRadius: '15px', background: '#fff', display: 'inline-block' }}>
+                        <img
+                          src={`https://promptpay.io/${promptPayNumber}/350.00.png`}
+                          alt="PromptPay QR Code"
+                          style={{ width: '100%', maxWidth: '200px', height: 'auto' }}
+                        />
                       </div>
+                      <p className="qr-hint" style={{ fontSize: '0.75rem', marginTop: '0.8rem', color: '#888' }}>
+                        เมื่อโอนเสร็จแล้ว ระบบจะตรวจสอบยอดให้อัตโนมัติ
+                      </p>
                       <button className="cta-btn secure-btn" onClick={() => setPayStep('success')}>
                         แจ้งโอนเงินสำเร็จ
                       </button>
@@ -764,6 +787,17 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      <footer>
+        <div className="footer-links">
+          <a href="#" className="footer-link">Privacy Policy</a>
+          <a href="#" className="footer-link">Terms of Service</a>
+          <a href="https://line.me" target="_blank" className="footer-link" style={{ color: '#00ff88' }}>Contact Support (Line)</a>
+        </div>
+        <div className="copyright">
+          © {new Date().getFullYear()} PDF MERGE Galaxy. All space rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }
