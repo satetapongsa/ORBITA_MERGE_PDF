@@ -65,7 +65,7 @@ export default function App() {
   const translations = {
     th: {
       heroTitle: "ทุกอย่างจัดการได้ในที่เดียว",
-      heroGradient: "PDF Merge",
+      heroGradient: "ORBITA PDF",
       searchPlaceholder: "ค้นหาเครื่องมือแปลงไฟล์ เช่น 'Word', 'Protect'...",
       toPdf: "แปลงเป็น PDF",
       fromPdf: "แปลงจาก PDF",
@@ -81,7 +81,7 @@ export default function App() {
     },
     en: {
       heroTitle: "One Stop Solution for",
-      heroGradient: "PDF Merge",
+      heroGradient: "ORBITA PDF",
       searchPlaceholder: "Search tools like 'Word', 'Protect'...",
       toPdf: "CONVERT TO PDF",
       fromPdf: "CONVERT FROM PDF",
@@ -464,7 +464,7 @@ export default function App() {
       <div className="top-header">
         <div className="logo-section">
           <div className="app-icon"><Sparkles size={24} color="#00f2ff" /></div>
-          <span className="logo-text">PDF MERGE</span>
+          <span className="logo-text">ORBITA PDF</span>
         </div>
         <div className="header-actions">
           <div className="lang-toggle glass">
@@ -795,7 +795,7 @@ export default function App() {
           <a href="https://line.me" target="_blank" className="footer-link" style={{ color: '#00ff88' }}>Contact Support (Line)</a>
         </div>
         <div className="copyright">
-          © {new Date().getFullYear()} PDF MERGE Galaxy. All space rights reserved.
+          © {new Date().getFullYear()} ORBITA PDF Galaxy. All rights reserved.
         </div>
       </footer>
     </div>
