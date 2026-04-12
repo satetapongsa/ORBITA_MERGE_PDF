@@ -1,51 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- MASTER SECURITY POLICY -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://www.google.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https://*.googleusercontent.com https://www.google.com https://*.supabase.co;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+      frame-src 'self' https://*.supabase.co https://www.google.com;
+    ">
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="google-site-verification" content="SKkeVI5UW3jl1RUTm27gwEuwhX3t4_7Sv_A73zPUv1Y" />
-
-  <title>ORBITA PDF | รวมไฟล์ PDF และเครื่องมือจัดการเอกสารออนไลน์</title>
-  <meta name="description"
-    content="รวมไฟล์ แยกไฟล์ บีบอัด PDF และจัดการรูปภาพออนไลน์ด้วย ORBITA PDF รวดเร็ว ปลอดภัย ไม่ต้องติดตั้งโปรแกรม" />
-  <meta name="keywords" content="orbita pdf, รวมไฟล์ pdf, แยกไฟล์ pdf, บีบอัด pdf, แปลงไฟล์ pdf ออนไลน์" />
-
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z52XGVLJCJ"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-Z52XGVLJCJ');
-  </script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://merge-galaxy.vercel.app/" />
-  <meta property="og:title" content="ORBITA PDF | อาร์บิทา พีดีเอฟ" />
-  <meta property="og:description"
-    content="เครื่องมือจัดการ PDF ที่ทรงพลังที่สุดในจักรวรรดิ รวดเร็ว ปลอดภัย ไร้ขีดจำกัด" />
-  <meta property="og:image" content="https://merge-galaxy.vercel.app/favicon.png" />
-  <!-- Microsoft Clarity -->
-  <script type="text/javascript">
-      (function(c,l,a,r,i,t,y){
-          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "waeij8qj1x");
-  </script>
-</head>
-
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
-
+    <title>ORBITA PDF | Professional PDF Toolkit</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

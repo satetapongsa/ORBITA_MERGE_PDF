@@ -187,7 +187,7 @@ export default function App() {
                   await page.render({ canvasContext: context, viewport }).promise;
                   newItems.push({ id: `${file.name}-${i}-${Date.now()}`, url: canvas.toDataURL(), file, pageNum: i });
               }
-            } catch (err) { console.error(err); }
+            } catch (err) { setStatus({type: 'error', msg: 'Processing failed. Your file is secure but unsupported.'}); setLoading(false); }
         }
         setItems(newItems);
         setLoading(false);
@@ -206,7 +206,7 @@ export default function App() {
       )}
 
       {/* --- HEADER --- */}
-      <header className="top-header glass-header">
+      {user && <header className="top-header glass-header">
         <div className="logo-section clickable" onClick={() => {setActiveTool(null); setFiles([]); setItems([]); window.scrollTo({top: 0, behavior: 'smooth'});}}>
           <div className="app-icon-hex shadow-neon">
             <Sparkles size={24} color="#00f2ff" />
@@ -235,29 +235,45 @@ export default function App() {
              <button className="cta-btn-sm shine-effect" onClick={signInWithGoogle}><LogIn size={16} /> {t('googleLogin')}</button>
           )}
         </div>
-      </header>
+      </header>}
 
       <main className="main-viewport">
         <AnimatePresence mode="wait">
           {!user ? (
-            <motion.div key="landing" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="hero-landing">
+            <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hero-landing-split">
               <div className="galaxy-bg-effect"></div>
-              <div className="landing-content">
-                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="badge-premium">ORBITA GALAXY V2.0</motion.div>
-                <h1 className="display-title">{t('landingTitle')} <span className="text-gradient">ORBITA</span></h1>
-                <p className="hero-desc"><b>{t('landingDesc')}</b> 🛡️ Privacy First. Local Processing.</p>
-                <div className="auth-card-luxury glass-dark">
-                   <div className="auth-header">
-                      <Sparkles size={32} color="#ffd700" />
-                      <h2>{t('welcomeBack')}</h2>
-                      <p>{t('loginSubtitle')}</p>
+              
+              <div className="landing-text-side animate-fade">
+                <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="badge-premium" style={{ marginBottom: '2rem' }}>ORBITA GALAXY V2.0</motion.div>
+                <motion.h1 initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="display-title-lux">
+                  Unlock PDF <br/> Magic with <br/><span className="text-gradient">ORBITA</span>
+                </motion.h1>
+                <motion.p initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="hero-desc" style={{ fontSize: '1.4rem', maxWidth: '600px', lineHeight: 1.6, opacity: 0.8 }}>
+                  {t('landingDesc')} <br/>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '20px', color: '#00ff88', fontSize: '1rem', fontWeight: '800' }}>
+                    <ShieldCheck size={20}/> Privacy First. 100% Local Processing.
+                  </span>
+                </motion.p>
+              </div>
+
+              <div className="landing-auth-side">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5 }} className="auth-card-luxury">
+                   <div className="auth-header" style={{ textAlign: 'center', marginBottom: '30px' }}>
+                      <div style={{ background: 'rgba(255,215,0,0.1)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                        <Sparkles size={32} color="#ffd700" />
+                      </div>
+                      <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('welcomeBack')}</h2>
+                      <p style={{ opacity: 0.6 }}>{t('loginSubtitle')}</p>
                    </div>
                    <button className="google-auth-btn sky-glow" onClick={signInWithGoogle}>
-                      <img src="https://www.google.com/favicon.ico" width="20" alt="G" />
-                      {t('googleLogin')}
+                      <img src="https://www.google.com/favicon.ico" width="24" alt="G" />
+                      <span>{t('googleLogin')}</span>
                    </button>
-                   <p className="auth-footer">Secure OAuth 2.0 • Data is encrypted</p>
-                </div>
+                   <div style={{ marginTop: '30px', textAlign: 'center', opacity: 0.5, fontSize: '0.8rem' }}>
+                      <p>Secure OAuth 2.0 Encryption</p>
+                      <p style={{ marginTop: '5px' }}>Trusted by 10,000+ Users</p>
+                   </div>
+                </motion.div>
               </div>
             </motion.div>
           ) : (
@@ -314,13 +330,17 @@ export default function App() {
                 </div>
               ) : (
                 <div className="active-tool-workspace animate-scale">
-                    <div className="workspace-header">
-                       <button className="back-btn-lux glass" onClick={() => {setActiveTool(null); setFiles([]); setItems([]);}} style={{ padding: '12px 25px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', color: '#fff' }}><ArrowLeft size={20} /> {t('home')}</button>
+                    <div className="workspace-header" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
+                       <button className="back-btn-lux" onClick={() => {setActiveTool(null); setFiles([]); setItems([]);}} ><ArrowLeft size={20} /> {t('home')}</button>
                        <div className="active-tool-badge" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                           <div className="tool-mini-icon" style={{ background: tools.find(tx => tx.id === activeTool).color, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{tools.find(tx => tx.id === activeTool).icon}</div>
                           <h2 style={{ fontSize: '1.6rem' }}>{tools.find(tx => tx.id === activeTool).name[lang]}</h2>
                        </div>
                     </div>
+                       <div className="security-badge glass-sm" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 15px', borderRadius: '12px', border: '1px solid rgba(0,255,136,0.2)', background: 'rgba(0,255,136,0.05)' }}>
+                          <ShieldCheck size={16} color="#00ff88" />
+                          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#00ff88' }}>SECURE LOCAL PROCESSING</span>
+                       </div>
 
                     <div className="dropzone-area-lux glass-card" onClick={() => fileInputRef.current.click()} style={{ marginTop: '2.5rem', minHeight: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                        <input type="file" ref={fileInputRef} hidden multiple onChange={handleFileSelect} />
@@ -421,13 +441,13 @@ export default function App() {
                     <button className="cta-btn-lux cyan-glow" onClick={() => { setIsPro(true); setShowPayModal(false); confetti(); }} style={{ width: '100%', background: 'linear-gradient(135deg, #00f2ff, #7000ff)', color: '#fff', padding: '18px', borderRadius: '20px', fontWeight: '900', border: 'none', cursor: 'pointer' }}>Simulate Success ✅</button>
                  </div>
                )}
-               <button className="close-btn-lux" onClick={() => setShowPayModal(false)}>×</button>
+               <button className="close-btn-round" onClick={() => setShowPayModal(false)}>×</button>
             </motion.div>
           </div>
         )}
 
         {showAccountModal && user && (
-          <div className="modal-overlay" style={{ background: 'transparent' }} onClick={() => setShowAccountModal(false)}>
+          <div className="modal-overlay" style={{ background: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} onClick={() => setShowAccountModal(false)}>
             <motion.div initial={{ y: -20, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -20, opacity: 0, scale: 0.95 }} className="profile-dropdown-container" onClick={e => e.stopPropagation()}>
               <div className="modal-header" style={{ marginBottom: '1.5rem' }}>
                 <img src={user.user_metadata.avatar_url} style={{ width: '85px', height: '85px', borderRadius: '50%', border: '4px solid var(--primary)', objectFit: 'cover', margin: '0 auto 1.5rem', boxShadow: '0 0 20px rgba(0,242,255,0.2)' }} alt="Avatar" />
