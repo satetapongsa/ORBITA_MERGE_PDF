@@ -1,16 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+import React, { useState, useRef, useEffect } from "react";
+import { PDFDocument } from "pdf-lib";
+import * as pdfjs from "pdfjs-dist";
+import JSZip from "jszip";
+import mammoth from "mammoth";
+import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
+
+import { supabase } from "./supabaseClient";
 import { 
   FilePlus, ArrowLeft, Download, Trash2, GripVertical, 
   Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive, 
   FileImage, FileText, FileSpreadsheet, Globe, Zap, ShieldCheck, Sparkles, Wand2, 
   Presentation, X, LogIn, LogOut, User as UserIcon
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import confetti from 'canvas-confetti';
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import confetti from "canvas-confetti";
 
 // PDF.js Worker Configuration
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
