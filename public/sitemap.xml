@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.4.5">
   <url>
-    <loc>https://merge-galaxy.vercel.app/</loc>
-    <lastmod>2024-04-12</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://orbita-merge-pdf.vercel.app/</loc>
+    <lastmod>2026-04-12</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 </urlset>
