@@ -13,7 +13,8 @@ import {
   FilePlus, ArrowLeft, Download, Trash2, GripVertical, 
   Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive, 
   FileImage, FileText, FileSpreadsheet, Globe, Zap, ShieldCheck, Sparkles, Wand2, 
-  Presentation, X, LogIn, LogOut, User as UserIcon
+  Presentation, X, LogIn, LogOut, User as UserIcon, QrCode, CreditCard, ChevronRight,
+  ShieldAlert, Settings, Clock, Files, FileType2, Lock, Unlock, Minimize2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
@@ -21,963 +22,441 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStr
 import { CSS } from "@dnd-kit/utilities";
 import confetti from "canvas-confetti";
 
-// PDF.js Worker Configuration
+// PDF.js Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
-// --- Sortable Item Component ---
 const SortableItem = ({ id, url, index, onDelete, label }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 1 };
-
   return (
-    <div ref={setNodeRef} style={style} className={`glass page-thumbnail ${isDragging ? 'dragging' : ''}`}>
+    <div ref={setNodeRef} style={style} className={`glass page-thumbnail ${isDragging ? "dragging" : ""}`}>
       <div className="page-number">{index + 1}</div>
-      <img src={url} alt={label || `Page ${index + 1}`} />
-      <p className="item-label">{label || `Page ${index + 1}`}</p>
+      <img src={url} alt="page" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       <div className="page-actions">
         <div className="drag-handle" {...attributes} {...listeners}><GripVertical size={16} /></div>
-        <button className="delete-btn" onClick={() => onDelete(id)}><Trash2 size={16} /></button>
+        <button className="del-btn-icon" onClick={() => onDelete(id)}><Trash2 size={16} /></button>
       </div>
     </div>
   );
 };
 
-// --- Main Application ---
 export default function App() {
-  const [showAccountModal, setShowAccountModal] = useState(false);
   const [user, setUser] = useState(null);
+  const [isPro, setIsPro] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [activeTool, setActiveTool] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [items, setItems] = useState([]);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [payStep, setPayStep] = useState('plans');
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lang, setLang] = useState("en"); // Default to English
+  const [history, setHistory] = useState([]);
+  const fileInputRef = useRef(null);
+
+  const t = (k) => {
+    const dict = {
+      th: { 
+        heroTitle: "ยกระดับการจัดการ PDF ให้เป็นเรื่อง", 
+        heroGradient: "มหัศจรรย์", 
+        searchPlaceholder: "ค้นหาเครื่องมือ...", 
+        unlockPro: "ปลดล็อก Pro", 
+        files: "ไฟล์", 
+        noHistory: "ยังไม่มีประวัติการใช้งาน", 
+        recentActivity: "ประวัติการใช้งาน",
+        landingTitle: "ปลดล็อคพลัง PDF ด้วย",
+        landingDesc: "จัดการ แบ่ง รวม และรักษาความปลอดภัยไฟล์ของคุณได้ทันใจ",
+        googleLogin: "เข้าสู่ระบบด้วย Google",
+        welcomeBack: "ยินดีต้อนรับกลับมา",
+        loginSubtitle: "ล็อคอินเพื่อเริ่มใช้งานฟรี",
+        convertNow: "แปลงไฟล์ทันที",
+        selected: "เลือกแล้ว",
+        dropHint: "ลากไฟล์วางที่นี่ หรือ คลิกเพื่อเลือกไฟล์",
+        supportFormat: "รองรับ PDF, DOCX, XLSX, รูปภาพ",
+        home: "หน้าแรก",
+        processing: "กำลังประมวลผล...",
+        upgradeTitle: "อัปเกรดเป็น Orbita Pro",
+        upgradeDesc: "เข้าถึงทุกเครื่องมือและฟีเจอร์ระดับมืออาชีพ",
+        manage: "จัดการไฟล์",
+        toPdf: "แปลงเป็น PDF",
+        fromPdf: "แปลงจาก PDF",
+        security: "ความปลอดภัย",
+        utility: "เครื่องมือทั่วไป"
+      },
+      en: { 
+        heroTitle: "Empower Your Workflow with", 
+        heroGradient: "PDF Magic", 
+        searchPlaceholder: "Search tools...", 
+        unlockPro: "Unlock Pro", 
+        files: "Files", 
+        noHistory: "No history yet", 
+        recentActivity: "Recent Activity",
+        landingTitle: "Unlock PDF Magic with",
+        landingDesc: "Manage, split, merge and secure your files instantly.",
+        googleLogin: "Continue with Google",
+        welcomeBack: "Welcome Back",
+        loginSubtitle: "Sign in to start for free",
+        convertNow: "Convert Now",
+        selected: "Selected",
+        dropHint: "Drop files here or click to browse",
+        supportFormat: "Supports PDF, DOCX, XLSX, Images",
+        home: "Home",
+        processing: "Processing...",
+        upgradeTitle: "Upgrade to Orbita Pro",
+        upgradeDesc: "Access all pro tools and professional features",
+        manage: "Manage Files",
+        toPdf: "Convert to PDF",
+        fromPdf: "Convert from PDF",
+        security: "Security",
+        utility: "Utility"
+      }
+    };
+    return dict[lang][k] || k;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) checkProStatus(session.user.id);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) checkProStatus(session.user.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      setUser(s?.user ?? null);
+      if (s?.user) checkProStatus(s.user.id);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkProStatus = async (userId) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('is_pro')
-      .eq('id', userId)
-      .single();
+  const checkProStatus = async (uid) => {
+    const { data } = await supabase.from("profiles").select("is_pro").eq("id", uid).single();
     if (data) setIsPro(data.is_pro);
   };
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin }
-    });
+    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsPro(false);
+    setUser(null);
   };
-
-  const [activeTool, setActiveTool] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState([]);
-  const [items, setItems] = useState([]);
-  const [status, setStatus] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [isPro, setIsPro] = useState(false);
-  const [showPayModal, setShowPayModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [password, setPassword] = useState('');
-  const [selectedPageIds, setSelectedPageIds] = useState([]); // For Split tool
-  const [imgSettings, setImgSettings] = useState({ format: 'image/jpeg', quality: 0.8, width: 0, height: 0 });
-  const [payMethod, setPayMethod] = useState(null); // 'stripe' or 'promptpay'
-  const [payStep, setPayStep] = useState('plans'); // 'plans', 'checkout', 'success'
-  const [promptPayNumber, setPromptPayNumber] = useState('0815018272'); // ใส่เบอร์ของคุณที่นี่
-  const [lang, setLang] = useState('th');
-  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('galaxy_history') || '[]'));
-  const fileInputRef = useRef(null);
-
-  const translations = {
-    th: {
-      heroTitle: "ทุกอย่างจัดการได้ในที่เดียว",
-      heroGradient: "ORBITA PDF",
-      searchPlaceholder: "ค้นหาเครื่องมือแปลงไฟล์ เช่น 'Word', 'Protect'...",
-      toPdf: "แปลงเป็น PDF",
-      fromPdf: "แปลงจาก PDF",
-      manage: "จัดการและจัดระเบียบ",
-      security: "ความปลอดภัย",
-      imageMagic: "จัดการรูปภาพ",
-      historyTitle: "ประหยัดพื้นที่อวกาศของคุณไปแล้ว",
-      recentActivity: "กิจกรรมล่าสุด",
-      files: "ไฟล์",
-      noHistory: "ยังไม่มีประวัติการใช้งานในแกแล็คซี่นี้",
-      unlockHistory: "อัปเกรดเป็น PREMIUM เพื่อดูประวัติย้อนหลังและโหลดไฟล์เดิมได้ตลอดกาล",
-      unlockPro: "ปลดล็อก Pro"
-    },
-    en: {
-      heroTitle: "One Stop Solution for",
-      heroGradient: "ORBITA PDF",
-      searchPlaceholder: "Search tools like 'Word', 'Protect'...",
-      toPdf: "CONVERT TO PDF",
-      fromPdf: "CONVERT FROM PDF",
-      manage: "OPTIMIZE & ORGANIZE",
-      security: "SECURITY & PROTECTION",
-      imageMagic: "IMAGE MAGIC TOOLKIT",
-      historyTitle: "Total Space Saved",
-      recentActivity: "Space Log (History)",
-      files: "Files",
-      noHistory: "No activity in this galaxy yet",
-      unlockHistory: "Upgrade to PREMIUM to view history and redownload files forever",
-      unlockPro: "Unlock Pro"
-    }
-  };
-
-  const t = (key) => translations[lang][key];
-
-  useEffect(() => {
-    localStorage.setItem('galaxy_history', JSON.stringify(history));
-  }, [history]);
-
-  useEffect(() => {
-    if (status) {
-      const timer = setTimeout(() => setStatus(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [status]);
 
   const tools = [
-    { id: 'jpg-to-pdf', name: 'JPG to PDF', icon: <FileImage />, color: '#ffd166', category: 'To PDF', desc: 'Convert JPG to PDF' },
-    { id: 'png-to-pdf', name: 'PNG to PDF', icon: <FileImage />, color: '#06d6a0', category: 'To PDF', desc: 'Convert PNG to PDF' },
-    { id: 'word-to-pdf', name: 'WORD to PDF', icon: <FileText />, color: '#ef476f', category: 'To PDF', desc: 'Convert DOCX to PDF' },
-    { id: 'excel-to-pdf', name: 'EXCEL to PDF', icon: <FileSpreadsheet />, color: '#023047', category: 'To PDF', desc: 'Convert XLSX to PDF' },
-    { id: 'ppt-to-pdf', name: 'PPT to PDF', icon: <Presentation />, color: '#e63946', category: 'To PDF', desc: 'Convert PPTX to PDF', pro: true },
-    { id: 'html-to-pdf', name: 'HTML to PDF', icon: <Globe />, color: '#8ecae6', category: 'To PDF', desc: 'Convert HTML to PDF' },
-
-    { id: 'pdf-to-jpg', name: 'PDF to JPG', icon: <ImageIcon />, color: '#fb8500', category: 'From PDF', desc: 'Extract PDF pages as JPG' },
-    { id: 'pdf-to-img', name: 'PDF to IMAGES', icon: <ImageIcon />, color: '#118ab2', category: 'From PDF', desc: 'Extract pages as ZIP' },
-    { id: 'pdf-to-word', name: 'PDF to WORD', icon: <FileText />, color: '#219ebc', category: 'From PDF', desc: 'Extract text to Word', pro: true },
-    { id: 'pdf-to-excel', name: 'PDF to EXCEL', icon: <FileSpreadsheet />, color: '#023047', category: 'From PDF', desc: 'Extract tables to Excel', pro: true },
-
-    { id: 'pdf-merge', name: 'Merge PDF', icon: <Layers />, color: '#7000ff', category: 'Manage', desc: 'Combine multiple PDFs' },
-    { id: 'pdf-reorder', name: 'Organize PDF', icon: <Move />, color: '#00f2ff', category: 'Manage', desc: 'Reorder PDF pages' },
-    { id: 'pdf-split', name: 'Split PDF', icon: <GripVertical />, color: '#ff006e', category: 'Manage', desc: 'Extract specific pages' },
-    { id: 'pdf-compress', name: 'Compress PDF', icon: <Zap />, color: '#38b000', category: 'Manage', desc: 'Reduce file size', pro: true },
-
-    { id: 'pdf-protect', name: 'Protect PDF', icon: <ShieldCheck />, color: '#d00000', category: 'Security', desc: 'Add password to PDF', pro: true },
-    { id: 'pdf-unlock', name: 'Unlock PDF', icon: <AlertCircle />, color: '#ff7d00', category: 'Security', desc: 'Remove PDF password', pro: true },
-    { id: 'pdf-sign', name: 'Sign PDF', icon: <Wand2 />, color: '#4361ee', category: 'Security', desc: 'Apply digital signature', pro: true },
-    { id: 'pdf-watermark', name: 'Watermark', icon: <Sparkles />, color: '#7209b7', category: 'Security', desc: 'Add patterns to PDF', pro: true },
-
-    { id: 'img-convert', name: 'Image Convert', icon: <ImageIcon />, color: '#ffbe0b', category: 'Image Magic', desc: 'PNG, JPG, WebP Switch' },
-    { id: 'img-magic', name: 'IMAGE MAGIC', icon: <Wand2 />, color: '#7209b7', category: 'Image Magic', desc: 'Resize, Compress & More' },
-    { id: 'png-to-jpg', name: 'PNG to JPG', icon: <ImageIcon />, color: '#ff70a6', category: 'Image Magic', desc: 'Convert PNG to JPEG format' },
-    { id: 'jpg-to-png', name: 'JPG to PNG', icon: <ImageIcon />, color: '#70d6ff', category: 'Image Magic', desc: 'Convert JPEG to PNG format' },
-    { id: 'img-compress', name: 'Compress Image', icon: <Zap />, color: '#ff006e', category: 'Image Magic', desc: 'Smaller file size', pro: true },
+    { id: 'pdf-merge', name: { th: 'รวม PDF', en: 'Merge PDF' }, desc: { th: 'รวมหลายไฟล์เป็นหนึ่งเดียว', en: 'Combine multiple files into one' }, cat: 'manage', color: 'linear-gradient(135deg, #6366f1, #a855f7)', icon: <Layers />, pro: false },
+    { id: 'pdf-split', name: { th: 'แยก PDF', en: 'Split PDF' }, desc: { th: 'แยกหน้าไฟล์ PDF ออกมา', en: 'Extract pages from your PDF' }, cat: 'manage', color: 'linear-gradient(135deg, #06b6d4, #3b82f6)', icon: <Move />, pro: false },
+    { id: 'pdf-reorder', name: { th: 'สลับหน้า PDF', en: 'Reorder Pages' }, desc: { th: 'สลับลำดับหน้าเอกสาร', en: 'Rearrange PDF page order' }, cat: 'manage', color: 'linear-gradient(135deg, #8b5cf6, #d946ef)', icon: <GripVertical />, pro: true },
+    { id: 'img-to-pdf', name: { th: 'รูปภาพเป็น PDF', en: 'Image to PDF' }, desc: { th: 'แปลงรูปภาพเป็นเอกสาร', en: 'Convert images to PDF docs' }, cat: 'toPdf', color: 'linear-gradient(135deg, #f59e0b, #ef4444)', icon: <FileImage />, pro: false },
+    { id: 'word-to-pdf', name: { th: 'Word เป็น PDF', en: 'Word to PDF' }, desc: { th: 'แปลงไฟล์ Word เป็น PDF', en: 'Convert Word docs to PDF' }, cat: 'toPdf', color: 'linear-gradient(135deg, #2563eb, #3b82f6)', icon: <FileText />, pro: true },
+    { id: 'excel-to-pdf', name: { th: 'Excel เป็น PDF', en: 'Excel to PDF' }, desc: { th: 'แปลงตาราง Excel เป็น PDF', en: 'Convert Excel sheets to PDF' }, cat: 'toPdf', color: 'linear-gradient(135deg, #10b981, #059669)', icon: <FileSpreadsheet />, pro: true },
+    { id: 'pdf-to-img', name: { th: 'PDF เป็นรูปภาพ', en: 'PDF to Image' }, desc: { th: 'แปลงเอกสารเป็นรูปภาพ', en: 'Extract pages as images' }, cat: 'fromPdf', color: 'linear-gradient(135deg, #10b981, #3b82f6)', icon: <Presentation />, pro: true },
+    { id: 'pdf-to-word', name: { th: 'PDF เป็น Word', en: 'PDF to Word' }, desc: { th: 'แปลงเอกสารกลับสู่ MS Word', en: 'Convert PDF back to Word' }, cat: 'fromPdf', color: 'linear-gradient(135deg, #3b82f6, #6366f1)', icon: <FileType2 />, pro: true },
+    { id: 'pdf-protect', name: { th: 'ล็อค PDF', en: 'Protect PDF' }, desc: { th: 'ตั้งรหัสผ่านความปลอดภัย', en: 'Set password protection' }, cat: 'security', color: 'linear-gradient(135deg, #ef4444, #8b5cf6)', icon: <Lock />, pro: true },
+    { id: 'pdf-unlock', name: { th: 'ปลดล็อค PDF', en: 'Unlock PDF' }, desc: { th: 'ลบรหัสผ่านออกจากไฟล์', en: 'Remove PDF password' }, cat: 'security', color: 'linear-gradient(135deg, #22c55e, #10b981)', icon: <Unlock />, pro: true },
+    { id: 'pdf-compress', name: { th: 'ลดขนาด PDF', en: 'Compress PDF' }, desc: { th: 'ย่อขนาดไฟล์ให้เล็กลง', en: 'Reduce PDF file size' }, cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 />, pro: true }
   ];
 
-  const handleFileSelect = async (e) => {
-
-    const currentToolData = tools.find(t => t.id === activeTool);
-    if (currentToolData?.pro && !isPro) {
+  const handleToolClick = (tool) => {
+    if (tool.pro && !isPro) {
       setShowPayModal(true);
-      e.target.value = null;
       return;
     }
+    setActiveTool(tool.id);
+    setFiles([]);
+    setItems([]);
+  };
 
-    const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length === 0) return;
-
-    if (activeTool === 'pdf-reorder' || activeTool === 'pdf-split') {
-      const pdfFile = selectedFiles.find(f => f.type === 'application/pdf');
-      if (!pdfFile) return setStatus({ type: 'error', message: 'กรุณาเลือกไฟล์ PDF' });
-      setLoading(true);
-      try {
-        const arrayBuffer = await pdfFile.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  const handleFileSelect = async (e) => {
+    const selFiles = Array.from(e.target.files);
+    setFiles(selFiles);
+    if (activeTool === 'pdf-merge' || activeTool === 'pdf-split' || activeTool === 'pdf-reorder') {
+        setLoading(true);
         const newItems = [];
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 0.5 });
-          const canvas = document.createElement('canvas');
-          canvas.height = viewport.height; canvas.width = viewport.width;
-          await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-          newItems.push({ id: `page-${i}-${Date.now()}`, url: canvas.toDataURL(), originalIndex: i - 1, file: pdfFile });
-          setProgress(Math.round((i / pdf.numPages) * 100));
+        for (const file of selFiles) {
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+              for (let i = 1; i <= pdf.numPages; i++) {
+                  const page = await pdf.getPage(i);
+                  const viewport = page.getViewport({ scale: 0.5 });
+                  const canvas = document.createElement('canvas');
+                  const context = canvas.getContext('2d');
+                  canvas.height = viewport.height;
+                  canvas.width = viewport.width;
+                  await page.render({ canvasContext: context, viewport }).promise;
+                  newItems.push({ id: `${file.name}-${i}-${Date.now()}`, url: canvas.toDataURL(), file, pageNum: i });
+              }
+            } catch (err) { console.error(err); }
         }
         setItems(newItems);
-        setFiles([pdfFile]);
-      } catch (err) { setStatus({ type: 'error', message: 'PDF Error' }); }
-      setLoading(false);
-    } else if (activeTool === 'jpg-to-pdf') {
-      const imgFiles = selectedFiles.filter(f => f.type.startsWith('image/'));
-      const newItems = await Promise.all(imgFiles.map(file => new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve({ id: `${Date.now()}-${Math.random()}`, url: e.target.result, file, label: file.name });
-        reader.readAsDataURL(file);
-      })));
-      setItems(prev => [...prev, ...newItems]);
-    } else {
-      setFiles(prev => [...prev, ...selectedFiles]);
+        setLoading(false);
     }
-    e.target.value = null;
   };
-
-  const processRequest = async () => {
-    setLoading(true); setProgress(0);
-    try {
-      if (activeTool === 'jpg-to-pdf' || activeTool === 'png-to-pdf') await runJpgToPdf();
-      else if (activeTool === 'pdf-to-jpg') await runPdfToJpg();
-      else if (activeTool === 'word-to-pdf') await runWordToPdf();
-      else if (activeTool === 'excel-to-pdf') await runExcelToPdf();
-      else if (activeTool === 'pdf-merge') await runMerge();
-      else if (activeTool === 'pdf-reorder') await runReorder();
-      else if (activeTool === 'pdf-split') await runSplit();
-      else if (activeTool === 'pdf-compress') await runCompress();
-      else if (activeTool === 'pdf-to-img') await runPdfToImg();
-      else if (activeTool === 'pdf-protect') await runProtect();
-      else if (activeTool === 'png-to-jpg') await runImageTool('image/jpeg');
-      else if (activeTool === 'jpg-to-png') await runImageTool('image/png');
-      else if (activeTool.startsWith('img-')) await runImageTool();
-      else setStatus({ type: 'error', message: 'Coming Soon' });
-    } catch (err) {
-      console.error(err);
-      setStatus({ type: 'error', message: 'Operation Failed' });
-    }
-    setLoading(false);
-  };
-
-  const runJpgToPdf = async () => {
-    const pdfDoc = await PDFDocument.create();
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const imgBytes = await item.file.arrayBuffer();
-      const img = item.file.type.includes('png') ? await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
-      const page = pdfDoc.addPage([img.width, img.height]);
-      page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-      setProgress(Math.round(((i + 1) / items.length) * 100));
-    }
-    download(await pdfDoc.save(), 'images.pdf', 'application/pdf');
-    addToHistory('JPG to PDF', items.length);
-    triggerSuccess();
-  };
-
-  const runPdfToJpg = async () => {
-    const zip = new JSZip();
-    for (const file of files) {
-      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-      const folder = zip.folder(file.name.replace('.pdf', ''));
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        folder.file(`p${i}.jpg`, canvas.toDataURL('image/jpeg').split(',')[1], { base64: true });
-        setProgress(Math.round((i / pdf.numPages) * 100));
-      }
-    }
-    download(await zip.generateAsync({ type: 'blob' }), 'images.zip', 'application/zip');
-    addToHistory('PDF to JPG', files.length);
-    triggerSuccess('บันทึกรูปภาพลง ZIP สำเร็จ!');
-  };
-
-  const runWordToPdf = async () => {
-    const doc = new jsPDF();
-    for (let i = 0; i < files.length; i++) {
-      const { value } = await mammoth.convertToHtml({ arrayBuffer: await files[i].arrayBuffer() });
-      const el = document.createElement('div'); el.innerHTML = value; el.style.width = '600px'; el.style.padding = '40px'; el.style.background = '#fff';
-      document.body.appendChild(el);
-      const canvas = await html2canvas(el);
-      if (i > 0) doc.addPage();
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, (canvas.height * 190) / canvas.width);
-      document.body.removeChild(el);
-      setProgress(Math.round(((i + 1) / files.length) * 100));
-    }
-    doc.save('word.pdf');
-    addToHistory('Word to PDF', files.length);
-    triggerSuccess();
-  };
-
-  const runExcelToPdf = async () => {
-    const doc = new jsPDF();
-    for (let i = 0; i < files.length; i++) {
-      const wb = XLSX.read(await files[i].arrayBuffer());
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (i > 0) doc.addPage();
-      autoTable(doc, { head: [json[0]], body: json.slice(1) });
-      setProgress(Math.round(((i + 1) / files.length) * 100));
-    }
-    doc.save('excel.pdf');
-    addToHistory('Excel to PDF', files.length);
-    triggerSuccess();
-  };
-
-  const runMerge = async () => {
-    const mergedPdf = await PDFDocument.create();
-    for (const file of files) {
-      const doc = await PDFDocument.load(await file.arrayBuffer());
-      const pages = await mergedPdf.copyPages(doc, doc.getPageIndices());
-      pages.forEach(p => mergedPdf.addPage(p));
-    }
-    download(await mergedPdf.save(), 'merged.pdf', 'application/pdf');
-    addToHistory('Merge PDF', files.length);
-    triggerSuccess();
-  };
-
-  const runReorder = async () => {
-    const newPdf = await PDFDocument.create();
-    const cache = new Map();
-    for (const item of items) {
-      if (!cache.has(item.file)) cache.set(item.file, await PDFDocument.load(await item.file.arrayBuffer()));
-      const [pg] = await newPdf.copyPages(cache.get(item.file), [item.originalIndex]);
-      newPdf.addPage(pg);
-    }
-    download(await newPdf.save(), 'reordered.pdf', 'application/pdf');
-    addToHistory('Reorder PDF', items.length);
-    triggerSuccess();
-  };
-
-  const runCompress = async () => {
-    const pdfDoc = await PDFDocument.create();
-    for (const file of files) {
-      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 }); // Balanced scale
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        // Use JPG with lower quality for compression
-        const imgUrl = canvas.toDataURL('image/jpeg', 0.5);
-        const imgBytes = await (await fetch(imgUrl)).arrayBuffer();
-        const img = await pdfDoc.embedJpg(imgBytes);
-        const p = pdfDoc.addPage([img.width, img.height]);
-        p.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-        setProgress(Math.round((i / pdf.numPages) * 100));
-      }
-    }
-    download(await pdfDoc.save(), 'compressed.pdf', 'application/pdf');
-    addToHistory('Compress PDF', files.length);
-    triggerSuccess('บีบอัดไฟล์สำเร็จ!');
-  };
-
-  const runPdfToImg = async () => {
-    const zip = new JSZip();
-    for (const file of files) {
-      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2.0 });
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        const imgData = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
-        zip.file(`page-${i}.jpg`, imgData, { base64: true });
-        setProgress(Math.round((i / pdf.numPages) * 100));
-      }
-    }
-    const content = await zip.generateAsync({ type: 'blob' });
-    download(content, 'pdf-images.zip', 'application/zip');
-    addToHistory('PDF to Images', files.length);
-    triggerSuccess('ดึงรูปภาพจาก PDF สำเร็จ!');
-  };
-
-  const addToHistory = (tool, count) => {
-    const entry = { id: Date.now(), tool, count, date: new Date().toLocaleString() };
-    setHistory(prev => [entry, ...prev].slice(0, 10));
-  };
-
-  const runSplit = async () => {
-    if (selectedPageIds.length === 0) {
-      setStatus({ type: 'error', message: 'กรุณาเลือกอย่างน้อย 1 หน้าเพื่อแยกไฟล์!' });
-      return;
-    }
-    const newPdf = await PDFDocument.create();
-    const sourceDoc = await PDFDocument.load(await files[0].arrayBuffer());
-
-    // Sort selected indices to maintain original order in excerpt
-    const selectedIndices = selectedPageIds
-      .map(id => items.find(it => it.id === id).originalIndex)
-      .sort((a, b) => a - b);
-
-    const pages = await newPdf.copyPages(sourceDoc, selectedIndices);
-    pages.forEach(p => newPdf.addPage(p));
-
-    download(await newPdf.save(), 'extracted_pages.pdf', 'application/pdf');
-    addToHistory('Split PDF', selectedPageIds.length);
-    triggerSuccess('แยกไฟล์สำเร็จ!');
-    setSelectedPageIds([]);
-  };
-
-  const runProtect = async () => {
-    if (!password) {
-      setStatus({ type: 'error', message: 'กรุณาตั้งรหัสผ่าน!' });
-      return;
-    }
-    const pdfDoc = await PDFDocument.load(await files[0].arrayBuffer());
-    // Note: Standard pdf-lib doesn't support encryption in browser easily.
-    // We will simulate the encryption metadata/workflow for the business demo.
-    const pdfBytes = await pdfDoc.save();
-    download(pdfBytes, 'protected.pdf', 'application/pdf');
-    addToHistory('Protect PDF', files.length);
-    triggerSuccess('เข้ารหัสไฟล์สำเร็จ!');
-    setPassword('');
-  };
-
-  const runImageTool = async (forceFormat = null) => {
-    const zip = new JSZip();
-    const targetFormat = forceFormat || imgSettings.format;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const img = new Image();
-      img.src = item.url;
-      await new Promise(r => img.onload = r);
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const w = imgSettings.width || img.width;
-      const h = imgSettings.height || img.height;
-      canvas.width = w; canvas.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-
-      const quality = activeTool === 'img-compress' ? 0.5 : 1.0;
-      const dataUrl = canvas.toDataURL(targetFormat, quality);
-      const ext = targetFormat.split('/')[1];
-      zip.file(`image-${i + 1}.${ext}`, dataUrl.split(',')[1], { base64: true });
-      setProgress(Math.round(((i + 1) / items.length) * 100));
-    }
-    download(await zip.generateAsync({ type: 'blob' }), 'converted-images.zip', 'application/zip');
-    addToHistory('Image Magic', items.length);
-    triggerSuccess('จัดการรูปภาพสำเร็จ!');
-  };
-
-  const download = (data, name, type) => {
-    const blob = new Blob([data], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
-  };
-  const triggerSuccess = (msg = 'เสร็จสิ้น!') => { setStatus({ type: 'success', message: msg }); confetti(); };
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      setItems(prev => {
-        const oldIndex = prev.findIndex(i => i.id === active.id);
-        const newIndex = prev.findIndex(i => i.id === over.id);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    }
-  };
-
-  const handleToolClick = (t) => {
-    if (t.pro && !isPro) {
-      setShowPayModal(true);
-    } else {
-      setActiveTool(t.id);
-      setFiles([]);
-      setItems([]);
-    }
-  };
 
   return (
     <div className="layout-root">
-      <div className="galaxy-bg">
-        <div className="nebula"></div>
-        {[...Array(50)].map((_, i) => (
-          <div key={i} className="star" style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            width: `${Math.random() * 3}px`,
-            height: `${Math.random() * 3}px`,
-            '--duration': `${2 + Math.random() * 4}s`
-          }}></div>
-        ))}
-      </div>
-
-      <div className="top-header">
-        <div className="logo-section">
-          <div className="app-icon"><Sparkles size={24} color="#00f2ff" /></div>
-          <span className="logo-text">ORBITA PDF</span>
+      {status && (
+        <div className={`status-toast ${status.type} animate-fade`}>
+          {status.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          {status.msg}
         </div>
-        <div className="header-actions">
-          <div className="lang-toggle glass">
+      )}
+
+      {/* --- HEADER --- */}
+      <header className="top-header glass-header">
+        <div className="logo-section clickable" onClick={() => {setActiveTool(null); setFiles([]); setItems([]); window.scrollTo({top: 0, behavior: 'smooth'});}}>
+          <div className="app-icon-hex shadow-neon">
+            <Sparkles size={24} color="#00f2ff" />
+          </div>
+          <span className="logo-text">ORBITA <span className="text-gradient">PDF</span></span>
+        </div>
+
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div className="lang-toggle glass-sm">
             <button className={lang === 'th' ? 'active' : ''} onClick={() => setLang('th')}>TH</button>
             <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
           </div>
-          {!user ? (
-            <motion.button whileHover={{ scale: 1.05 }} className="login-btn glass" onClick={signInWithGoogle}>
-              <LogIn size={16} /> เข้าสู่ระบบ
-            </motion.button>
-          ) : (
-            <div className="user-profile-group">
-              <div className="user-info glass" style={{ cursor: "pointer" }} onClick={() => setShowAccountModal(true)}>
-                <img src={user.user_metadata.avatar_url} alt="Avatar" className="user-avatar" />
-                <span className="user-name">{user.user_metadata.full_name}</span>
+
+          {user ? (
+            <div className="user-profile-actions" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div className="user-info-chip glass-card" onClick={() => setShowAccountModal(true)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 15px', borderRadius: '15px' }}>
+                <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} />
+                <div className="user-meta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span className="u-name" style={{ fontSize: '0.85rem', fontWeight: '700' }}>{user.user_metadata.full_name}</span>
+                  <span className={`u-status ${isPro ? 'pro-glow' : ''}`} style={{ fontSize: '0.65rem', fontWeight: '800', opacity: 0.8, color: isPro ? 'var(--accent)' : 'var(--text-dim)' }}>{isPro ? 'PREMIUM' : 'FREE PLAN'}</span>
+                </div>
               </div>
-              <button className="logout-btn glass" onClick={handleLogout} title="Logout">
-                <LogOut size={16} />
-              </button>
+              <button className="logout-btn-icon" onClick={handleLogout} title="Logout"><LogOut size={16} /></button>
             </div>
-          )}
-
-          {!isPro && user && (
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="pro-btn glass" onClick={() => setShowPayModal(true)}>
-              <Zap size={16} fill="#ffd700" color="#ffd700" /> {t('unlockPro')}
-            </motion.button>
-          )}
-
-          {isPro && (
-            <div className="pro-active-badge neon-green">
-              <ShieldCheck size={16} /> Premium
-            </div>
+          ) : (
+             <button className="cta-btn-sm shine-effect" onClick={signInWithGoogle}><LogIn size={16} /> {t('googleLogin')}</button>
           )}
         </div>
-      </div>
+      </header>
 
-      <AnimatePresence mode="wait">
-
-        {!user ? (
-          <motion.div 
-            key="auth-gate"
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="auth-gate"
-          >
-            <div className="hero-section text-center">
-                <div className="badge">SaaS-Ready PDF Platform</div>
-                <h1 style={{ fontSize: '3.5rem', marginBottom: '1.5rem' }}>Experience PDF Magic with <span className="text-gradient">ORBITA</span></h1>
-                <p className="hero-subtitle" style={{ fontSize: '1.2rem', opacity: 0.8, maxWidth: '600px', margin: '0 auto 3rem' }}>ล็อคอินด้วย Google เพื่อเริ่มใช้งานและประมวลผลไฟล์ของคุณอย่างปลอดภัยบนบราวเซอร์</p>
-                
-                <div className="auth-card glass animate-up" style={{ padding: '3rem', maxWidth: '450px', margin: '0 auto', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="app-icon" style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', fontSize: '2rem' }}><Sparkles size={32} color="#00f2ff" /></div>
-                    <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Member Access</h2>
-                    <p style={{ opacity: 0.6, marginBottom: '2rem' }}>เข้าสู่ระบบเพื่อจดจำการตั้งค่าและรับสิทธิ์ใช้งานระดับ Pro</p>
-                    <button className="cta-btn gold-btn" style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '1rem' }} onClick={signInWithGoogle}>
-                        <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Continue with Google
-                    </button>
-                    <p style={{ marginTop: '1.5rem', fontSize: '0.75rem', opacity: 0.5 }}>No password required. Secure Google OAuth 2.0</p>
-                </div>
-            </div>
-          </motion.div>
-        ) : (
-          !activeTool ? (
-          <motion.div key="dash" className="dashboard-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="hero-section">
-              <div className="badge">Professional PDF Solutions</div>
-              <h1>{t('heroTitle')} <span className="text-gradient">{t('heroGradient')}</span></h1>
-
-              <div className="search-box-container">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="search-bar glass">
-                  <Wand2 size={20} color="#00f2ff" />
-                  <input
-                    type="text"
-                    placeholder={t('searchPlaceholder')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </motion.div>
-              </div>
-
-              <div className="trust-badges-row animate-fade">
-                <div className="trust-item">
-                  <ShieldCheck size={18} color="#00ff88" />
-                  <span>Privacy First (Client-Side)</span>
-                </div>
-                <div className="trust-item">
-                  <Zap size={18} color="#ffd700" />
-                  <span>Ultra-Fast Process</span>
-                </div>
-                <div className="trust-item">
-                  <Globe size={18} color="#00f2ff" />
-                  <span>Global Secure Standards</span>
+      <main className="main-viewport">
+        <AnimatePresence mode="wait">
+          {!user ? (
+            <motion.div key="landing" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="hero-landing">
+              <div className="galaxy-bg-effect"></div>
+              <div className="landing-content">
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="badge-premium">ORBITA GALAXY V2.0</motion.div>
+                <h1 className="display-title">{t('landingTitle')} <span className="text-gradient">ORBITA</span></h1>
+                <p className="hero-desc"><b>{t('landingDesc')}</b> 🛡️ Privacy First. Local Processing.</p>
+                <div className="auth-card-luxury glass-dark">
+                   <div className="auth-header">
+                      <Sparkles size={32} color="#ffd700" />
+                      <h2>{t('welcomeBack')}</h2>
+                      <p>{t('loginSubtitle')}</p>
+                   </div>
+                   <button className="google-auth-btn sky-glow" onClick={signInWithGoogle}>
+                      <img src="https://www.google.com/favicon.ico" width="20" alt="G" />
+                      {t('googleLogin')}
+                   </button>
+                   <p className="auth-footer">Secure OAuth 2.0 • Data is encrypted</p>
                 </div>
               </div>
-
-            </div>
-            {['To PDF', 'From PDF', 'Manage', 'Security', 'Image Magic'].map(cat => {
-              const filteredTools = tools.filter(t =>
-                t.category === cat &&
-                (t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  t.desc.toLowerCase().includes(searchTerm.toLowerCase()))
-              );
-
-              if (filteredTools.length === 0) return null;
-
-              return (
-                <div key={cat} className="group-container">
-                  <h2 className="cat-title">
-                    {cat === 'To PDF' ? t('toPdf') :
-                      cat === 'From PDF' ? t('fromPdf') :
-                        cat === 'Manage' ? t('manage') :
-                          cat === 'Security' ? t('security') : t('imageMagic')}
-                  </h2>
-                  <div className="tools-grid-main">
-                    {filteredTools.map(t => (
-                      <motion.div whileHover={{ y: -5 }} key={t.id} className="tool-box glass" onClick={() => handleToolClick(t)}>
-                        {t.pro && !isPro && <div className="pro-tag">PRO</div>}
-                        {t.pro && isPro && <div className="pro-tag premium-tag">PREMIUM</div>}
-                        <div className="box-icon" style={{ background: t.color }}>{t.icon}</div>
-                        <div className="box-info"><h3>{t.name}</h3><p>{t.desc}</p></div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="knowledge-hub animate-fade" style={{ marginTop: '4rem', marginBottom: '4rem' }}>
-              <h2 className="cat-title">Knowledge Hub — คู่มือและเทคนิค</h2>
-              <div className="blog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
-                {[
-                  { id: 1, title: "วิธีรวมไฟล์ PDF ง่ายๆ ใน 10 วินาที", desc: "แนะเคล็ดลับการใช้ ORBITA PDF เพื่อประหยัดเวลาการทำงานเอกสาร", date: "12 Apr 2026", icon: <Sparkles size={18} color="#00f2ff" /> },
-                  { id: 2, title: "ความปลอดภัยของเอกสารบน Browser", desc: "ทำไมการประมวลผลบนเครื่องคุณถึงปลอดภัยกว่า Cloud ทั่วไป", date: "11 Apr 2026", icon: <ShieldCheck size={18} color="#00ff88" /> },
-                  { id: 3, title: "เทคนิคการบีบอัด PDF ให้คมชัด", desc: "ย่อขนาดไฟล์โดยไม่เสียคุณภาพด้วยเอนจินอัจฉริยะของเรา", date: "10 Apr 2026", icon: <Zap size={18} color="#ffd700" /> },
-                ].map(post => (
-                  <motion.div whileHover={{ y: -5 }} key={post.id} className="blog-card glass" style={{ padding: '1.5rem', textAlign: 'left', cursor: 'pointer' }}>
-                    <div className="blog-icon" style={{ marginBottom: '1rem' }}>{post.icon}</div>
-                    <div className="blog-body">
-                      <h4 style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{post.title}</h4>
-                      <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '1rem' }}>{post.desc}</p>
-                      <span className="blog-date" style={{ fontSize: '12px', opacity: 0.5, color: '#94a3b8' }}>{post.date}</span>
+            </motion.div>
+          ) : (
+            <motion.div key="app-main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="app-content-container">
+              {!activeTool ? (
+                <div className="dashboard-view animate-fade">
+                  <div className="dashboard-hero" style={{ textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '3.2rem', marginBottom: '1.5rem', lineHeight: 1.2 }}>{t('heroTitle')} <br/><span className="text-gradient">{t('heroGradient')}</span></h1>
+                    <div className="search-container-lux">
+                       <Wand2 className="search-icon" size={22} />
+                       <input type="text" className="search-input-lux" placeholder={t('searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+                  </div>
 
-            <div className={`history-section animate-up ${!isPro ? 'locked' : ''}`}>
-              <div className="history-header">
-                <div className="icon-group">
-                  <Globe size={24} color="#00f2ff" />
-                  <h3>{t('recentActivity')} {!isPro && '🔒'}</h3>
-                </div>
-                <div className="stats-badge glass">
-                  <Zap size={14} color="#ffd700" />
-                  {history.length * 3.4} MB {t('historyTitle')}
-                </div>
-              </div>
-              <div className="history-list">
-                {history.length > 0 ? history.map(item => (
-                  <div key={item.id} className="history-item glass">
-                    <div className="item-main">
-                      <span className="tool-tag">{item.tool}</span>
-                      <span className="count">{item.count} {t('files')}</span>
-                    </div>
-                    <span className="date">{item.date}</span>
+                  <div className="tools-sections" style={{ marginTop: '5rem' }}>
+                    {['manage', 'toPdf', 'fromPdf', 'security', 'utility'].map(catKey => {
+                        const catTools = tools.filter(tx => tx.cat === catKey && (tx.name.en.toLowerCase().includes(searchTerm.toLowerCase()) || tx.name.th.includes(searchTerm)));
+                        if (catTools.length === 0) return null;
+                        return (
+                          <section key={catKey} className="tool-group-section" style={{ marginBottom: '4rem' }}>
+                            <h2 className="section-label" style={{ marginBottom: '1.5rem', fontSize: '1.3rem', opacity: 0.8, color: 'var(--primary)' }}>{t(catKey)}</h2>
+                            <div className="tools-grid-lux">
+                              {catTools.map(tool => (
+                                <motion.div whileHover={{ y: -8, scale: 1.02 }} key={tool.id} className="tool-card-lux glass" onClick={() => handleToolClick(tool)}>
+                                   <div className="tool-icon-box" style={{ background: tool.color }}>{tool.icon}</div>
+                                   <div className="tool-info">
+                                      <h3>{tool.name[lang]}</h3>
+                                      <p>{tool.desc[lang]}</p>
+                                   </div>
+                                   {tool.pro && !isPro && <div className="pro-lock-tag"><Zap size={10} /> PRO</div>}
+                                   <ChevronRight className="arrow-hint" size={16} />
+                                </motion.div>
+                              ))}
+                            </div>
+                          </section>
+                        );
+                    })}
                   </div>
-                )) : (
-                  <div className="empty-history">{t('noHistory')}</div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div key="active" className="tool-view-container" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
-            <div className="tool-header-row">
-              <button className="back-btn-solid-large" onClick={() => { setActiveTool(null); setFiles([]); setItems([]); setSelectedPageIds([]); }}>
-                <ArrowLeft size={20} /> {lang === 'th' ? 'กลับหน้าหลัก' : 'Back to Home'}
-              </button>
-              <div className="active-tool-info">
-                <div className="tool-icon-small" style={{ background: tools.find(t => t.id === activeTool).color }}>{tools.find(t => t.id === activeTool).icon}</div>
-                <h2>{tools.find(t => t.id === activeTool).name}</h2>
-              </div>
-              <div className="tool-specific-options">
-                {activeTool === 'pdf-protect' && (
-                  <input type="password" placeholder="ตั้งรหัสผ่าน..." value={password} onChange={e => setPassword(e.target.value)} className="glass-input bright" />
-                )}
-                {activeTool === 'pdf-split' && items.length > 0 && (
-                  <div className="split-status">{t('files')}: {selectedPageIds.length}</div>
-                )}
-                {activeTool === 'img-convert' && (
-                  <select value={imgSettings.format} onChange={e => setImgSettings(p => ({ ...p, format: e.target.value }))} className="glass-input bright">
-                    <option value="image/jpeg">To JPG</option>
-                    <option value="image/png">To PNG</option>
-                    <option value="image/webp">To WebP</option>
-                  </select>
-                )}
-                {activeTool === 'img-resize' && (
-                  <div className="resize-inputs">
-                    <input type="number" placeholder="W" className="glass-input sm" onChange={e => setImgSettings(p => ({ ...p, width: parseInt(e.target.value) }))} />
-                    <input type="number" placeholder="H" className="glass-input sm" onChange={e => setImgSettings(p => ({ ...p, height: parseInt(e.target.value) }))} />
+
+                  <div className="history-section animate-up" style={{ marginTop: '5rem', background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '35px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                     <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Clock size={22} color="#00f2ff" /> <h3 style={{ fontSize: '1.4rem' }}>{t('recentActivity')}</h3></div>
+                        {isPro ? <span className="stat-tag glass-sm" style={{ fontSize: '0.8rem', opacity: 0.6 }}>History Sync On</span> : <span className="stat-tag locked" style={{ fontSize: '0.8rem', opacity: 0.6 }}>Pro Feature 🔒</span>}
+                     </div>
+                     <div className="history-list-compact" style={{ display: 'grid', gap: '12px' }}>
+                        {history.length > 0 ? history.map(h => (
+                          <div key={h.id} className="history-item-lux glass-sm" style={{ padding: '18px 25px', borderRadius: '20px', display: 'flex', justifyContent: 'space-between' }}>
+                             <span className="h-tool" style={{ fontWeight: '700' }}>{h.tool}</span>
+                             <span className="h-date" style={{ opacity: 0.5 }}>{h.date}</span>
+                          </div>
+                        )) : <div className="empty-state-lux" style={{ textAlign: 'center', padding: '3rem', opacity: 0.4 }}>{t('noHistory')}</div>}
+                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-            <div className="workspace-card glass">
-              {(files.length === 0 && items.length === 0) ? (
-                <div className="upload-area-main" onClick={() => fileInputRef.current.click()}>
-                  <div className="upload-icon-circle"><FilePlus size={56} color="#FFFFFF" /></div>
-                  <p className="bright-text">{lang === 'th' ? 'ลากไฟล์มาที่นี่ หรือคลิกเพื่ออัปโหลด' : 'Drag files here or click to upload'}</p>
-                  <input type="file" ref={fileInputRef} hidden multiple onChange={handleFileSelect} />
                 </div>
               ) : (
-                <div className="active-area">
-                  {items.length > 0 ? (
-                    <div className="items-grid-scroll">
-                      {activeTool === 'pdf-reorder' ? (
-                        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                          <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-                            {items.map((it, idx) => (
-                              <SortableItem key={it.id} id={it.id} url={it.url} index={idx} label={it.label} onDelete={id => setItems(p => p.filter(x => x.id !== id))} />
-                            ))}
-                          </SortableContext>
-                        </DndContext>
-                      ) : (
-                        <div className="split-selection-grid">
-                          {items.map((it, idx) => {
-                            const isSelected = selectedPageIds.includes(it.id);
-                            return (
-                              <div
-                                key={it.id}
-                                className={`glass page-thumbnail selectable ${isSelected ? 'selected' : ''}`}
-                                onClick={() => setSelectedPageIds(prev => isSelected ? prev.filter(id => id !== it.id) : [...prev, it.id])}
-                              >
-                                <div className="page-number">{idx + 1}</div>
-                                <img src={it.url} alt={`Page ${idx + 1}`} />
-                                {isSelected && <div className="check-overlay"><CheckCircle2 color="#00f2ff" /></div>}
+                <div className="active-tool-workspace animate-scale">
+                    <div className="workspace-header">
+                       <button className="back-btn-lux glass" onClick={() => {setActiveTool(null); setFiles([]); setItems([]);}} style={{ padding: '12px 25px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', color: '#fff' }}><ArrowLeft size={20} /> {t('home')}</button>
+                       <div className="active-tool-badge" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <div className="tool-mini-icon" style={{ background: tools.find(tx => tx.id === activeTool).color, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{tools.find(tx => tx.id === activeTool).icon}</div>
+                          <h2 style={{ fontSize: '1.6rem' }}>{tools.find(tx => tx.id === activeTool).name[lang]}</h2>
+                       </div>
+                    </div>
+
+                    <div className="dropzone-area-lux glass-card" onClick={() => fileInputRef.current.click()} style={{ marginTop: '2.5rem', minHeight: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                       <input type="file" ref={fileInputRef} hidden multiple onChange={handleFileSelect} />
+                       {(files.length === 0 && items.length === 0) ? (
+                         <div className="drop-content" style={{ textAlign: 'center' }}>
+                            <motion.div animate={{ y: [0, -12, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="icon-pulse" style={{ marginBottom: '20px' }}>
+                               <FilePlus size={72} color="#00f2ff" />
+                            </motion.div>
+                            <p style={{ fontSize: '1.4rem', fontWeight: '600', marginBottom: '10px' }}>{t('dropHint')}</p>
+                            <span className="hint-text" style={{ opacity: 0.5, fontSize: '0.9rem' }}>{t('supportFormat')}</span>
+                         </div>
+                       ) : (
+                         <div className="files-preview-lux" style={{ width: '100%' }}>
+                            {(activeTool === 'pdf-merge' || activeTool === 'pdf-split' || activeTool === 'pdf-reorder') ? (
+                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
+                                if (active && over && active.id !== over.id) {
+                                  setItems(itms => {
+                                    const oldIdx = itms.findIndex(i => i.id === active.id);
+                                    const newIdx = itms.findIndex(i => i.id === over.id);
+                                    return arrayMove(itms, oldIdx, newIdx);
+                                  });
+                                }
+                              }}>
+                                <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                                  <div className="grid-preview" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '20px', padding: '30px' }}>
+                                    {items.map((it, idx) => (
+                                      <SortableItem key={it.id} id={it.id} index={idx} url={it.url} onDelete={id => setItems(p => p.filter(x => x.id !== id))} />
+                                    ))}
+                                  </div>
+                                </SortableContext>
+                              </DndContext>
+                            ) : (
+                              <div className="list-preview" style={{ display: 'grid', gap: '12px', padding: '30px' }}>
+                                 {files.map((f, i) => (
+                                   <div key={i} className="file-row-lux glass" style={{ padding: '18px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '20px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+                                        <FileText size={22} color="#00f2ff" />
+                                        <span style={{ fontWeight: '600' }}>{f.name}</span>
+                                      </div>
+                                      <button onClick={(e) => { e.stopPropagation(); setFiles(p => p.filter((_, idx) => idx !== i)); }} style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer' }}><Trash2 size={20} /></button>
+                                   </div>
+                                 ))}
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                            )}
+                         </div>
+                       )}
                     </div>
-                  ) : (
-                    <div className="items-list-scroll">
-                      {files.map((f, i) => {
-                        const isImg = f.type.startsWith('image/');
-                        const pUrl = isImg ? URL.createObjectURL(f) : null;
-                        return (
-                          <div key={i} className="list-row glass" style={{ position: 'relative', overflow: 'hidden' }}>
-                            {pUrl && <div className="file-preview-bg" style={{ backgroundImage: `url(${pUrl})` }}></div>}
-                            <div className="list-row-content" style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', padding: '0 1rem' }}>
-                              <FileText size={18} color="white" />
-                              <div className="p-name" style={{ color: 'white', fontWeight: '600', fontSize: '0.95rem' }}>{f.name}</div>
-                            </div>
-                            <button className="del-btn-icon" style={{ position: 'relative', zIndex: 2, background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer' }} onClick={() => setFiles(p => p.filter((_, idx) => idx !== i))}>
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+
+                    {(files.length > 0 || items.length > 0) && (
+                      <div className="action-bar-lux glass animate-up" style={{ marginTop: '3.5rem', padding: '25px 50px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '30px', border: '1px solid var(--primary)', boxShadow: '0 10px 40px rgba(0,242,255,0.1)' }}>
+                         <div className="file-summary" style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('selected')}: {files.length || items.length} {t('files')}</div>
+                         <button className="cta-btn-lux cyan-glow" disabled={loading} style={{ background: 'var(--primary)', color: '#000', padding: '16px 45px', borderRadius: '18px', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem' }}>
+                            {loading ? <><Loader2 className="spin" /> {t('processing')}</> : <><Wand2 size={22} /> {t('convertNow')}</>}
+                         </button>
+                      </div>
+                    )}
                 </div>
               )}
-            </div>
-            {(files.length > 0 || items.length > 0) && (
-              <div className="floating-action-bar glass animate-up">
-                <div className="count-chip">{files.length || items.length} ไฟล์</div>
-                <button className="cta-btn" onClick={processRequest} disabled={loading}>{loading ? <><Loader2 className="spin" size={20} /> กำลังรัน ({progress}%)</> : <><Wand2 size={20} /> เริ่มต้นเลย</>}</button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* --- Account Management Modal --- */}
-      <AnimatePresence>
-        {showAccountModal && user && (
-          <div className="modal-overlay" onClick={() => setShowAccountModal(false)}>
-            <motion.div 
-              className="pay-modal glass animate-up" 
-              onClick={e => e.stopPropagation()}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              style={{ maxWidth: '500px' }}
-            >
-              <div className="modal-header">
-                <div className="profile-large-img" style={{ margin: '0 auto 1.5rem' }}>
-                  <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #00f2ff' }} />
-                </div>
-                <h2>Member Workspace</h2>
-                <p style={{ color: '#94a3b8' }}>{user.email}</p>
-              </div>
-
-              <div className="account-info-grid" style={{ display: 'grid', gap: '1rem', margin: '2rem 0' }}>
-                <div className="info-item glass" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="label" style={{ opacity: 0.6 }}>Status</span>
-                  <span className="val" style={{ fontWeight: 800, color: isPro ? '#00ff88' : '#fff' }}>{isPro ? 'PREMIUM MEMBER' : 'FREE PLAN'}</span>
-                </div>
-              </div>
-
-              <div className="account-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {!isPro && (
-                  <button className="cta-btn gold-btn" onClick={() => { setShowAccountModal(false); setShowPayModal(true); }}>
-                    🏆 Upgrade to Premium
-                  </button>
-                )}
-                <button className="free-btn" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                  <LogOut size={16} /> Sign Out
-                </button>
-              </div>
-
-              <button className="close-btn" onClick={() => setShowAccountModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </main>
 
-      <AnimatePresence>
-        {status && (
-          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0, y: 50 }} className={`notif ${status.type}`}>
-            <CheckCircle2 size={18} /> {status.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-
-      {/* --- Account Management Modal --- */}
-      <AnimatePresence>
-        {showAccountModal && user && (
-          <div className="modal-overlay" onClick={() => setShowAccountModal(false)}>
-            <motion.div 
-              className="pay-modal glass animate-up" 
-              onClick={e => e.stopPropagation()}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              style={{ maxWidth: '500px' }}
-            >
-              <div className="modal-header">
-                <div className="profile-large-img" style={{ margin: '0 auto 1.5rem' }}>
-                  <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #00f2ff' }} />
-                </div>
-                <h2>Member Workspace</h2>
-                <p style={{ color: '#94a3b8' }}>{user.email}</p>
-              </div>
-
-              <div className="account-info-grid" style={{ display: 'grid', gap: '1rem', margin: '2rem 0' }}>
-                <div className="info-item glass" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="label" style={{ opacity: 0.6 }}>Status</span>
-                  <span className="val" style={{ fontWeight: 800, color: isPro ? '#00ff88' : '#fff' }}>{isPro ? 'PREMIUM MEMBER' : 'FREE PLAN'}</span>
-                </div>
-              </div>
-
-              <div className="account-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {!isPro && (
-                  <button className="cta-btn gold-btn" onClick={() => { setShowAccountModal(false); setShowPayModal(true); }}>
-                    🏆 Upgrade to Premium
-                  </button>
-                )}
-                <button className="free-btn" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                  <LogOut size={16} /> Sign Out
-                </button>
-              </div>
-
-              <button className="close-btn" onClick={() => setShowAccountModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
+      {/* --- MODALS --- */}
       <AnimatePresence>
         {showPayModal && (
-          <div className="modal-overlay" onClick={() => { setShowPayModal(false); setPayStep('plans'); }}>
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="pay-modal glass"
-              onClick={e => e.stopPropagation()}
-            >
-              {payStep === 'plans' && (
-                <>
-                  <div className="modal-header">
-                    <Zap size={48} color="#ffd700" style={{ marginBottom: '1rem' }} />
-                    <h2>Unlock ORBITA Pro</h2>
-                    <p>เข้าถึงทุกเครื่องมือแบบไร้ขีดจำกัด</p>
+          <div className="modal-overlay blur-overlay" onClick={() => setShowPayModal(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="pay-modal-lux" onClick={e => e.stopPropagation()} style={{ padding: '60px', borderRadius: '45px', textAlign: 'center' }}>
+               <div className="pay-header">
+                  <div className="badge-pro-gold" style={{ background: 'var(--accent)', color: '#000', padding: '6px 20px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '900', display: 'inline-block', marginBottom: '1.5rem' }}>PREMIUM ACCESS</div>
+                  <h2 style={{ fontSize: '2.4rem', marginBottom: '0.5rem', fontWeight: '800' }}>{t('upgradeTitle')}</h2>
+                  <p style={{ opacity: 0.6, fontSize: '1.1rem' }}>{t('upgradeDesc')}</p>
+               </div>
+
+               {payStep === 'plans' ? (
+                 <div className="plans-selection" style={{ marginTop: '30px' }}>
+                    <div className="plan-card luxury-border" style={{ background: 'rgba(255,255,255,0.03)', padding: '35px', borderRadius: '30px', border: '1px solid var(--accent)', position: 'relative' }}>
+                       <span className="price-tag" style={{ fontSize: '3rem', fontWeight: '900' }}>฿59<small style={{ fontSize: '1.1rem', opacity: 0.5 }}>/month</small></span>
+                       <ul className="plan-perks" style={{ listStyle: 'none', margin: '25px 0', display: 'grid', gap: '12px', textAlign: 'left' }}>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><CheckCircle2 color="#00ff88" size={18} /> Unlocked All 20+ Pro Tools</li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><CheckCircle2 color="#00ff88" size={18} /> High Quality Conversion</li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><CheckCircle2 color="#00ff88" size={18} /> Priority Processing Speed</li>
+                       </ul>
+                       <button className="gold-btn-lux" onClick={() => setPayStep('checkout')} style={{ width: '100%', background: 'var(--accent)', color: '#000', padding: '18px', borderRadius: '20px', fontWeight: '900', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>Get Pro Now</button>
+                    </div>
+                    <button className="text-link-lux" onClick={() => setShowPayModal(false)} style={{ background: 'none', border: 'none', color: '#fff', width: '100%', marginTop: '25px', opacity: 0.5, cursor: 'pointer' }}>Stay on Free Plan</button>
+                 </div>
+               ) : (
+                 <div className="checkout-step animate-fade" style={{ marginTop: '30px' }}>
+                    <div className="qr-checkout-card" style={{ background: '#fff', padding: '30px', borderRadius: '30px', display: 'inline-block', marginBottom: '25px' }}>
+                       <QrCode size={200} color="#000" />
+                       <p className="timer" style={{ color: '#000', marginTop: '15px', fontWeight: '800', fontSize: '1.1rem' }}>Scan within <b style={{ color: '#ff4d4d' }}>01:59</b></p>
+                    </div>
+                    <div className="checkout-info" style={{ display: 'grid', gap: '12px', maxWidth: '300px', margin: '0 auto 25px' }}>
+                       <div className="row" style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total Amount:</span> <b style={{ color: 'var(--accent)' }}>59.00 THB</b></div>
+                       <div className="row" style={{ display: 'flex', justifyContent: 'space-between' }}><span>Method:</span> <b>PromptPay QR</b></div>
+                    </div>
+                    <button className="cta-btn-lux cyan-glow" onClick={() => { setIsPro(true); setShowPayModal(false); confetti(); }} style={{ width: '100%', background: 'linear-gradient(135deg, #00f2ff, #7000ff)', color: '#fff', padding: '18px', borderRadius: '20px', fontWeight: '900', border: 'none', cursor: 'pointer' }}>Simulate Success ✅</button>
+                 </div>
+               )}
+               <button className="close-btn-lux" onClick={() => setShowPayModal(false)}>×</button>
+            </motion.div>
+          </div>
+        )}
+
+        {showAccountModal && user && (
+          <div className="modal-overlay" style={{ background: 'transparent' }} onClick={() => setShowAccountModal(false)}>
+            <motion.div initial={{ y: -20, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -20, opacity: 0, scale: 0.95 }} className="profile-dropdown-container" onClick={e => e.stopPropagation()}>
+              <div className="modal-header" style={{ marginBottom: '1.5rem' }}>
+                <img src={user.user_metadata.avatar_url} style={{ width: '85px', height: '85px', borderRadius: '50%', border: '4px solid var(--primary)', objectFit: 'cover', margin: '0 auto 1.5rem', boxShadow: '0 0 20px rgba(0,242,255,0.2)' }} alt="Avatar" />
+                <h2 style={{ fontSize: '1.6rem', fontWeight: '800' }}>{user.user_metadata.full_name}</h2>
+                <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>{user.email}</p>
+                <div style={{ marginTop: '1.2rem', background: isPro ? 'var(--accent)' : 'rgba(255,255,255,0.08)', color: isPro ? '#000' : '#fff', padding: '6px 18px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: '900', display: 'inline-block' }}>{isPro ? 'PREMIUM MEMBER' : 'FREE USER'}</div>
+              </div>
+              {!isPro && (
+                <div className='upgrade-banner'>
+                  <div style={{ textAlign: 'left' }}>
+                    <div className='cta-text' style={{ color: 'var(--accent)', fontWeight: '900', fontSize: '0.95rem' }}>⭐ UPGRADE TO PRO</div>
+                    <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>{t('upgradeDesc')}</p>
                   </div>
-                  <div className="pricing-grid">
-                    <div className="pricing-card blur-card">
-                      <span className="price">Free Plan</span>
-                      <ul>
-                        <li><CheckCircle2 size={14} /> Basic conversions</li>
-                        <li><CheckCircle2 size={14} /> Standard quality</li>
-                      </ul>
-                      <button className="free-btn" onClick={() => setShowPayModal(false)}>
-                        ใช้แผนฟรีต่อ
-                      </button>
-                    </div>
-                    <div className="pricing-card popular galaxy-border">
-                      <div className="popular-tag">BEST VALUE</div>
-                      <span className="price">฿59<small>/mo</small></span>
-                      <ul>
-                        <li><CheckCircle2 size={14} color="#00ff88" /> All Pro Tools unlocked</li>
-                        <li><CheckCircle2 size={14} color="#00ff88" /> Ultra High Quality</li>
-                        <li><CheckCircle2 size={14} color="#00ff88" /> 24/7 Priority Support</li>
-                      </ul>
-                      <button className="cta-btn gold-btn" onClick={() => setPayStep('checkout')}>
-                        อัปเกรดเป็น Pro
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {payStep === 'checkout' && (
-                <div className="checkout-step animate-fade text-center">
-                  <h3>สแกนเพื่ออัปเกรดเป็น Pro</h3>
-                  <div className="qr-checkout glass animate-up" style={{ padding: '2rem' }}>
-                    <p className="price-tag">฿59.00</p>
-                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>ชื่อบัญชี: ORBITA PDF Pro Subscription</p>
-                    
-                    <div className="qr-container">
-                      <img
-                        src={`https://promptpay.io/${promptPayNumber}/59.00.png`}
-                        alt="PromptPay QR Code"
-                        className="pp-qr"
-                      />
-                    </div>
-
-                    <div className="payment-status-box" style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '20px', fontSize: '0.9rem' }}>
-                      <p style={{ color: '#00ff88', fontWeight: 600, marginBottom: '0.5rem' }}>ระบบกำลังรอการโอนเงิน...</p>
-                      <p style={{ fontSize: '0.8rem', opacity: 0.6 }}>กรุณาโอนเงินภายใน 2:00 นาที</p>
-                    </div>
-
-                    <button className="cta-btn secure-btn" style={{ marginTop: '2rem', width: '100%' }} onClick={() => { setIsPro(true); setPayStep('success'); }}>
-                      แจ้งโอนเงินเรียบร้อย
-                    </button>
-
-                    <button className="back-text" style={{ marginTop: '1.5rem', display: 'block', margin: '1.5rem auto 0' }} onClick={() => setPayStep('plans')}>
-                      ← ย้อนกลับ
-                    </button>
-                  </div>
+                  <button onClick={() => { setShowPayModal(true); setShowAccountModal(false); }} className='gold-btn-lux' style={{ padding: '10px 20px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', border: 'none' }}>Upgrade</button>
                 </div>
               )}
-
-              {payStep === 'success' && (
-                <div className="success-step animate-scale">
-                  <div className="success-icon-large"><CheckCircle2 size={80} color="#00ff88" /></div>
-                  <h2>Payment Successful!</h2>
-                  <p>ตอนนี้คุณคือผู้ใช้ระดับ PREMIUM แล้ว</p>
-                  <button className="cta-btn gold-btn" onClick={() => { setIsPro(true); setShowPayModal(false); setPayStep('plans'); triggerSuccess("Welcome to the Galaxy Pro! ✨"); }}>
-                    เริ่มต้นใช้งานฟีเจอร์โปร
-                  </button>
-                </div>
-              )}
+              <button className="logout-btn-dropdown" onClick={handleLogout}><LogOut size={16} /> Sign Out</button>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-        )}
-      <footer>
-        <div className="footer-links">
-          <a href="#" className="footer-link">Privacy Policy</a>
-          <a href="#" className="footer-link">Terms of Service</a>
-          <a href="https://line.me" target="_blank" className="footer-link" style={{ color: '#00ff88' }}>Contact Support (Line)</a>
-        </div>
-        <div className="copyright">
-          © {new Date().getFullYear()} ORBITA PDF Galaxy. All rights reserved.
-        </div>
+      <footer className="galaxy-footer">
+          <div className="footer-links">
+             <a href="#">Privacy Policy</a>
+             <a href="#">Terms of Service</a>
+             <a href="#" className="support-link">Support Hub</a>
+          </div>
+          <p>© 2026 ORBITA PDF Galaxy. Built with Love for the Future.</p>
       </footer>
     </div>
   );
