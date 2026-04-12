@@ -549,6 +549,26 @@ export default function App() {
               );
             })}
 
+            <div className="knowledge-hub animate-fade" style={{ marginTop: '4rem', marginBottom: '4rem' }}>
+              <h2 className="cat-title">Knowledge Hub — คู่มือและเทคนิค</h2>
+              <div className="blog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
+                {[
+                  { id: 1, title: "วิธีรวมไฟล์ PDF ง่ายๆ ใน 10 วินาที", desc: "แนะเคล็ดลับการใช้ ORBITA PDF เพื่อประหยัดเวลาการทำงานเอกสาร", date: "12 Apr 2026", icon: <Sparkles size={18} color="#00f2ff" /> },
+                  { id: 2, title: "ความปลอดภัยของเอกสารบน Browser", desc: "ทำไมการประมวลผลบนเครื่องคุณถึงปลอดภัยกว่า Cloud ทั่วไป", date: "11 Apr 2026", icon: <ShieldCheck size={18} color="#00ff88" /> },
+                  { id: 3, title: "เทคนิคการบีบอัด PDF ให้คมชัด", desc: "ย่อขนาดไฟล์โดยไม่เสียคุณภาพด้วยเอนจินอัจฉริยะของเรา", date: "10 Apr 2026", icon: <Zap size={18} color="#ffd700" /> },
+                ].map(post => (
+                  <motion.div whileHover={{ y: -5 }} key={post.id} className="blog-card glass" style={{ padding: '1.5rem', textAlign: 'left', cursor: 'pointer' }}>
+                    <div className="blog-icon" style={{ marginBottom: '1rem' }}>{post.icon}</div>
+                    <div className="blog-body">
+                      <h4 style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{post.title}</h4>
+                      <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '1rem' }}>{post.desc}</p>
+                      <span className="blog-date" style={{ fontSize: '12px', opacity: 0.5, color: '#94a3b8' }}>{post.date}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
             <div className={`history-section animate-up ${!isPro ? 'locked' : ''}`}>
               <div className="history-header">
                 <div className="icon-group">
