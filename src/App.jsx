@@ -567,8 +567,7 @@ export default function App() {
             </div>
           </motion.div>
         ) : (
-
-        {!activeTool ? (
+          !activeTool ? (
           <motion.div key="dash" className="dashboard-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="hero-section">
               <div className="badge">Professional PDF Solutions</div>
