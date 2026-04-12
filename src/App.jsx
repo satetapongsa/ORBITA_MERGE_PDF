@@ -1,18 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PDFDocument } from 'pdf-lib';
-import * as pdfjs from 'pdfjs-dist';
-import JSZip from 'jszip';
-import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
-
-import {
-  FilePlus, ArrowLeft, Download, Trash2, GripVertical, Image as ImageIcon,
-  Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive,
-  FileImage, FileText, FileSpreadsheet, Globe, Zap, ShieldCheck, Sparkles, Wand2,
-  Presentation, X
+import { supabase } from './supabaseClient';
+import { 
+  FilePlus, ArrowLeft, Download, Trash2, GripVertical, 
+  Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive, 
+  FileImage, FileText, FileSpreadsheet, Globe, Zap, ShieldCheck, Sparkles, Wand2, 
+  Presentation, X, LogIn, LogOut, User as UserIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
@@ -43,6 +35,44 @@ const SortableItem = ({ id, url, index, onDelete, label }) => {
 
 // --- Main Application ---
 export default function App() {
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) checkProStatus(session.user.id);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) checkProStatus(session.user.id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkProStatus = async (userId) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_pro')
+      .eq('id', userId)
+      .single();
+    if (data) setIsPro(data.is_pro);
+  };
+
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsPro(false);
+  };
+
   const [activeTool, setActiveTool] = useState(null);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState([]);
@@ -471,13 +501,31 @@ export default function App() {
             <button className={lang === 'th' ? 'active' : ''} onClick={() => setLang('th')}>TH</button>
             <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
           </div>
-          {!isPro ? (
+          {!user ? (
+            <motion.button whileHover={{ scale: 1.05 }} className="login-btn glass" onClick={signInWithGoogle}>
+              <LogIn size={16} /> เข้าสู่ระบบ
+            </motion.button>
+          ) : (
+            <div className="user-profile-group">
+              <div className="user-info glass" style={{ cursor: "pointer" }} onClick={() => setShowAccountModal(true)}>
+                <img src={user.user_metadata.avatar_url} alt="Avatar" className="user-avatar" />
+                <span className="user-name">{user.user_metadata.full_name}</span>
+              </div>
+              <button className="logout-btn glass" onClick={handleLogout} title="Logout">
+                <LogOut size={16} />
+              </button>
+            </div>
+          )}
+
+          {!isPro && user && (
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="pro-btn glass" onClick={() => setShowPayModal(true)}>
               <Zap size={16} fill="#ffd700" color="#ffd700" /> {t('unlockPro')}
             </motion.button>
-          ) : (
+          )}
+
+          {isPro && (
             <div className="pro-active-badge neon-green">
-              <ShieldCheck size={16} /> Premium Active
+              <ShieldCheck size={16} /> Premium
             </div>
           )}
         </div>
@@ -697,11 +745,101 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* --- Account Management Modal --- */}
+      <AnimatePresence>
+        {showAccountModal && user && (
+          <div className="modal-overlay" onClick={() => setShowAccountModal(false)}>
+            <motion.div 
+              className="pay-modal glass animate-up" 
+              onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              style={{ maxWidth: '500px' }}
+            >
+              <div className="modal-header">
+                <div className="profile-large-img" style={{ margin: '0 auto 1.5rem' }}>
+                  <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #00f2ff' }} />
+                </div>
+                <h2>Member Workspace</h2>
+                <p style={{ color: '#94a3b8' }}>{user.email}</p>
+              </div>
+
+              <div className="account-info-grid" style={{ display: 'grid', gap: '1rem', margin: '2rem 0' }}>
+                <div className="info-item glass" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="label" style={{ opacity: 0.6 }}>Status</span>
+                  <span className="val" style={{ fontWeight: 800, color: isPro ? '#00ff88' : '#fff' }}>{isPro ? 'PREMIUM MEMBER' : 'FREE PLAN'}</span>
+                </div>
+              </div>
+
+              <div className="account-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {!isPro && (
+                  <button className="cta-btn gold-btn" onClick={() => { setShowAccountModal(false); setShowPayModal(true); }}>
+                    🏆 Upgrade to Premium
+                  </button>
+                )}
+                <button className="free-btn" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                  <LogOut size={16} /> Sign Out
+                </button>
+              </div>
+
+              <button className="close-btn" onClick={() => setShowAccountModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {status && (
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0, y: 50 }} className={`notif ${status.type}`}>
             <CheckCircle2 size={18} /> {status.message}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      {/* --- Account Management Modal --- */}
+      <AnimatePresence>
+        {showAccountModal && user && (
+          <div className="modal-overlay" onClick={() => setShowAccountModal(false)}>
+            <motion.div 
+              className="pay-modal glass animate-up" 
+              onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              style={{ maxWidth: '500px' }}
+            >
+              <div className="modal-header">
+                <div className="profile-large-img" style={{ margin: '0 auto 1.5rem' }}>
+                  <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #00f2ff' }} />
+                </div>
+                <h2>Member Workspace</h2>
+                <p style={{ color: '#94a3b8' }}>{user.email}</p>
+              </div>
+
+              <div className="account-info-grid" style={{ display: 'grid', gap: '1rem', margin: '2rem 0' }}>
+                <div className="info-item glass" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="label" style={{ opacity: 0.6 }}>Status</span>
+                  <span className="val" style={{ fontWeight: 800, color: isPro ? '#00ff88' : '#fff' }}>{isPro ? 'PREMIUM MEMBER' : 'FREE PLAN'}</span>
+                </div>
+              </div>
+
+              <div className="account-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {!isPro && (
+                  <button className="cta-btn gold-btn" onClick={() => { setShowAccountModal(false); setShowPayModal(true); }}>
+                    🏆 Upgrade to Premium
+                  </button>
+                )}
+                <button className="free-btn" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                  <LogOut size={16} /> Sign Out
+                </button>
+              </div>
+
+              <button className="close-btn" onClick={() => setShowAccountModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -718,8 +856,8 @@ export default function App() {
               {payStep === 'plans' && (
                 <>
                   <div className="modal-header">
-                    <Zap fill="#ffd700" color="#ffd700" size={40} className="glow-icon" />
-                    <h2>Unlock PDF Magic Pro</h2>
+                    <Zap size={48} color="#ffd700" style={{ marginBottom: '1rem' }} />
+                    <h2>Unlock ORBITA Pro</h2>
                     <p>เข้าถึงทุกเครื่องมือแบบไร้ขีดจำกัด</p>
                   </div>
                   <div className="pricing-grid">
@@ -729,17 +867,20 @@ export default function App() {
                         <li><CheckCircle2 size={14} /> Basic conversions</li>
                         <li><CheckCircle2 size={14} /> Standard quality</li>
                       </ul>
+                      <button className="free-btn" onClick={() => setShowPayModal(false)}>
+                        ใช้แผนฟรีต่อ
+                      </button>
                     </div>
                     <div className="pricing-card popular galaxy-border">
                       <div className="popular-tag">BEST VALUE</div>
-                      <span className="price">$9.99<small>/mo</small></span>
+                      <span className="price">฿59<small>/mo</small></span>
                       <ul>
                         <li><CheckCircle2 size={14} color="#00ff88" /> All Pro Tools unlocked</li>
                         <li><CheckCircle2 size={14} color="#00ff88" /> Ultra High Quality</li>
                         <li><CheckCircle2 size={14} color="#00ff88" /> 24/7 Priority Support</li>
                       </ul>
                       <button className="cta-btn gold-btn" onClick={() => setPayStep('checkout')}>
-                        Get Selected Plan
+                        อัปเกรดเป็น Pro
                       </button>
                     </div>
                   </div>
@@ -747,49 +888,33 @@ export default function App() {
               )}
 
               {payStep === 'checkout' && (
-                <div className="checkout-step animate-fade">
-                  <h3>เลือกช่องทางการชำระเงิน</h3>
-                  <div className="payment-options">
-                    <button className={`pay-opt ${payMethod === 'stripe' ? 'active' : ''}`} onClick={() => setPayMethod('stripe')}>
-                      <ShieldCheck size={20} /> Credit Card (Stripe)
+                <div className="checkout-step animate-fade text-center">
+                  <h3>สแกนเพื่ออัปเกรดเป็น Pro</h3>
+                  <div className="qr-checkout glass animate-up" style={{ padding: '2rem' }}>
+                    <p className="price-tag">฿59.00</p>
+                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>ชื่อบัญชี: ORBITA PDF Pro Subscription</p>
+                    
+                    <div className="qr-container">
+                      <img
+                        src={`https://promptpay.io/${promptPayNumber}/59.00.png`}
+                        alt="PromptPay QR Code"
+                        className="pp-qr"
+                      />
+                    </div>
+
+                    <div className="payment-status-box" style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '20px', fontSize: '0.9rem' }}>
+                      <p style={{ color: '#00ff88', fontWeight: 600, marginBottom: '0.5rem' }}>ระบบกำลังรอการโอนเงิน...</p>
+                      <p style={{ fontSize: '0.8rem', opacity: 0.6 }}>กรุณาโอนเงินภายใน 2:00 นาที</p>
+                    </div>
+
+                    <button className="cta-btn secure-btn" style={{ marginTop: '2rem', width: '100%' }} onClick={() => { setIsPro(true); setPayStep('success'); }}>
+                      แจ้งโอนเงินเรียบร้อย
                     </button>
-                    <button className={`pay-opt ${payMethod === 'promptpay' ? 'active' : ''}`} onClick={() => setPayMethod('promptpay')}>
-                      <Zap size={20} color="#00f2ff" /> PromptPay QR
+
+                    <button className="back-text" style={{ marginTop: '1.5rem', display: 'block', margin: '1.5rem auto 0' }} onClick={() => setPayStep('plans')}>
+                      ← ย้อนกลับ
                     </button>
                   </div>
-
-                  {payMethod === 'stripe' && (
-                    <div className="stripe-form glass animate-up">
-                      <input type="text" placeholder="Card Number" className="glass-input" value="4242 4242 4242 4242" readOnly />
-                      <div className="row">
-                        <input type="text" placeholder="MM/YY" className="glass-input" value="12/26" readOnly />
-                        <input type="text" placeholder="CVC" className="glass-input" value="123" readOnly />
-                      </div>
-                      <button className="cta-btn secure-btn" onClick={() => setPayStep('success')}>
-                        Pay Securely with Stripe
-                      </button>
-                    </div>
-                  )}
-
-                  {payMethod === 'promptpay' && (
-                    <div className="qr-checkout glass animate-up">
-                      <p>สแกนเพื่อชำระเงิน 350.00 บาท</p>
-                      <div className="qr-placeholder" style={{ border: '4px solid #fff', padding: '10px', borderRadius: '15px', background: '#fff', display: 'inline-block' }}>
-                        <img
-                          src={`https://promptpay.io/${promptPayNumber}/350.00.png`}
-                          alt="PromptPay QR Code"
-                          style={{ width: '100%', maxWidth: '200px', height: 'auto' }}
-                        />
-                      </div>
-                      <p className="qr-hint" style={{ fontSize: '0.75rem', marginTop: '0.8rem', color: '#888' }}>
-                        เมื่อโอนเสร็จแล้ว ระบบจะตรวจสอบยอดให้อัตโนมัติ
-                      </p>
-                      <button className="cta-btn secure-btn" onClick={() => setPayStep('success')}>
-                        แจ้งโอนเงินสำเร็จ
-                      </button>
-                    </div>
-                  )}
-                  <button className="back-text" onClick={() => setPayStep('plans')}>ย้อนกลับ</button>
                 </div>
               )}
 

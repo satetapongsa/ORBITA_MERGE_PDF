@@ -384,3 +384,369 @@ footer { margin-top: 8rem; padding: 6rem 2rem 4rem; border-top: 1px solid var(--
 .footer-link { color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: 0.3s; font-weight: 500; }
 .footer-link:hover { color: var(--primary); }
 .copyright { color: var(--text-muted); font-size: 14px; opacity: 0.4; }
+
+/* --- Optimized Payment Modal --- */
+.pay-modal {
+  width: 90% !important;
+  max-width: 850px !important;
+  padding: 4rem 2rem !important;
+  text-align: center;
+  border-radius: 40px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+  background: rgba(15, 15, 25, 0.95) !important;
+}
+
+.modal-header { margin-bottom: 3.5rem; }
+.modal-header h2 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin: 1rem 0 0.5rem;
+  color: #fff;
+  letter-spacing: -1.5px;
+}
+.modal-header p {
+  color: #cbd5e1 !important;
+  font-size: 1.2rem !important;
+  font-weight: 400;
+  opacity: 1 !important;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2.5rem;
+  margin-top: 1rem;
+}
+
+.pricing-card {
+  padding: 3rem 2rem;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex !important;
+  flex-direction: column;
+  position: relative;
+}
+
+.pricing-card.popular {
+  border: 2px solid #ffd700 !important;
+  background: radial-gradient(circle at top right, rgba(255, 215, 0, 0.05), transparent) !important;
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.15);
+}
+
+.popular-tag {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #ffd700, #ffae00);
+  color: #000;
+  font-weight: 900 !important;
+  font-size: 0.8rem;
+  padding: 8px 25px !important;
+  border-radius: 50px;
+  text-transform: uppercase;
+}
+
+.pricing-card .price {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 2rem;
+}
+.pricing-card .price small { font-size: 1.1rem; opacity: 0.5; font-weight: 400; }
+
+.pricing-card ul { list-style: none; padding: 0; margin: 0 0 3rem 0; text-align: left; }
+.pricing-card ul li {
+  color: #f1f5f9 !important;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cta-btn.gold-btn {
+  background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
+  color: #000 !important;
+  font-weight: 800 !important;
+  padding: 1.2rem !important;
+  font-size: 1.1rem !important;
+  border-radius: 18px !important;
+  box-shadow: 0 15px 30px rgba(255, 140, 0, 0.3) !important;
+  border: none !important;
+}
+
+.gold-btn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.blur-card { opacity: 0.4; filter: grayscale(1); }
+
+/* --- Luxury Checkout Step --- */
+.checkout-step {
+  padding: 1rem 0;
+  color: #fff;
+}
+
+.checkout-step h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.payment-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 2.5rem;
+}
+
+.pay-opt {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 20px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pay-opt:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-5px);
+}
+
+.pay-opt.active {
+  background: rgba(0, 242, 255, 0.1);
+  border: 2px solid #00f2ff;
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.3);
+  color: #00f2ff;
+}
+
+.pay-opt svg {
+  opacity: 0.8;
+}
+
+.pay-opt.active svg {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.stripe-form, .qr-checkout {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 2.5rem !important;
+  border-radius: 25px !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5) !important;
+}
+
+.secure-btn {
+  margin-top: 2rem;
+  padding: 1rem !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+}
+
+.back-text {
+  margin-top: 2rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.3s;
+}
+
+.back-text:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+
+/* --- Pro Stripe Form --- */
+.stripe-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.5rem !important;
+  text-align: left !important;
+}
+
+.card-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-input-wrapper label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.glass-input.full {
+  width: 100% !important;
+}
+
+.secure-btn {
+  background: linear-gradient(135deg, #4361ee, #4cc9f0) !important;
+  box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3) !important;
+  margin-top: 1rem;
+}
+
+.price-tag {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.pp-qr {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  border-radius: 12px;
+  border: 4px solid #fff;
+  background: #fff;
+}
+
+.qr-container {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  display: inline-block;
+  margin: 1.5rem 0;
+}
+
+
+/* --- Centered Floating Modal --- */
+.pay-modal {
+  width: 95% !important;
+  max-width: 750px !important;
+  padding: 3rem 2rem !important;
+  margin: 2rem auto !important;
+  background: rgba(15, 16, 25, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 35px !important;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 30px rgba(0, 242, 255, 0.1) !important;
+}
+
+.modal-header h2 {
+  font-size: 2.2rem !important;
+  background: linear-gradient(135deg, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.2rem !important;
+}
+
+.pricing-grid {
+  gap: 1.5rem !important;
+}
+
+.pricing-card {
+  padding: 2rem 1.5rem !important;
+  border-radius: 24px !important;
+}
+
+.free-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 0.8rem;
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 1rem;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.free-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+
+/* --- User Profile & Auth --- */
+.user-profile-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 1rem 0.4rem 0.4rem !important;
+  border-radius: 50px !important;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.logout-btn, .login-btn {
+  padding: 0.6rem 1rem !important;
+  border-radius: 12px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 68, 68, 0.1) !important;
+  border-color: rgba(255, 68, 68, 0.3) !important;
+  color: #ff4444;
+}
+
+.login-btn {
+  background: var(--primary-glow) !important;
+  border-color: var(--primary) !important;
+}
+
+.pro-active-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
