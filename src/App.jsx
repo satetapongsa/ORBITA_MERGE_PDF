@@ -8,7 +8,6 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 
-
 import { 
   FilePlus, ArrowLeft, Download, Trash2, GripVertical, 
   Layers, Move, Loader2, CheckCircle2, AlertCircle, FolderArchive, 
@@ -45,20 +44,16 @@ const SortableItem = ({ id, url, index, onDelete }) => {
 
 export default function App() {
   const [status, setStatus] = useState(null);
-
   const [activeTool, setActiveTool] = useState(null);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState([]);
   const [items, setItems] = useState([]);
   const [downloadUrl, setDownloadUrl] = useState(null);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [lang, setLang] = useState("en");
   const [history, setHistory] = useState([]);
-
   const [password, setPassword] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-
   const fileInputRef = useRef(null);
 
   const t = (k) => {
@@ -68,10 +63,6 @@ export default function App() {
     };
     return dict[lang][k] || k;
   };
-
-
-
-
 
   const tools = [
     { id: 'pdf-merge', name: { th: 'รวม PDF', en: 'Merge PDF' }, desc: { th: 'รวมหลายไฟล์เป็นหนึ่งเดียว', en: 'Combine multiple files into one' }, cat: 'manage', color: 'linear-gradient(135deg, #6366f1, #a855f7)', icon: <Layers /> },
@@ -88,7 +79,7 @@ export default function App() {
   ];
 
   const handleToolClick = (tool) => {
-    setActiveTool(tool.id); setFiles([]); setItems([]);
+    setActiveTool(tool.id); setFiles([]); setItems([]); setDownloadUrl(null);
   };
 
   const handleFileSelect = async (e) => {
@@ -116,16 +107,14 @@ export default function App() {
     }
   };
 
-    const processFiles = async () => {
+  const processFiles = async () => {
     if ((files.length === 0 && items.length === 0) || loading) return;
     
-    // Check if security tools need a password
     if ((activeTool === 'pdf-protect' || activeTool === 'pdf-unlock') && !password) {
       setShowPasswordModal(true);
       return;
     }
     
-    confetti(); // ยิงพลุนิดหน่อยฉลอง!
     setLoading(true);
     try {
       if (activeTool === 'pdf-to-img') {
@@ -158,7 +147,12 @@ export default function App() {
         const mergedPdf = await PDFDocument.create();
         for (const f of files) {
           const bytes = await f.arrayBuffer();
-          const img = f.type === 'image/jpeg' ? await mergedPdf.embedJpg(bytes) : await mergedPdf.embedPng(bytes);
+          let img;
+          if (f.type === 'image/jpeg' || f.type === 'image/jpg') {
+            img = await mergedPdf.embedJpg(bytes);
+          } else {
+            img = await mergedPdf.embedPng(bytes);
+          }
           const page = mergedPdf.addPage();
           const { width, height } = img.scaleToFit(page.getWidth(), page.getHeight());
           page.drawImage(img, { x: page.getWidth()/2 - width/2, y: page.getHeight()/2 - height/2, width, height });
@@ -182,7 +176,6 @@ export default function App() {
           else { doc.deletePage(1); doc.addPage([vp.width, vp.height]); }
           doc.addImage(imgData, 'JPEG', 0, 0, vp.width, vp.height);
         }
-        doc.setProperties({ title: 'Protected PDF', author: 'ORBITA PDF' });
         doc.encrypt({ userPassword: password, ownerPassword: password, userPermissions: ['print', 'modify', 'copy'] });
         const bytes = doc.output('blob');
         setDownloadUrl(URL.createObjectURL(bytes));
@@ -199,17 +192,69 @@ export default function App() {
           setDownloadUrl(URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })));
           setStatus({ type: 'success', msg: 'PDF Unlocked Successfully!' });
         } catch (err) {
-          console.error(err);
           setStatus({ type: 'error', msg: 'Incorrect password or corrupted file.' });
           setLoading(false); return;
         }
+      } else if (activeTool === 'word-to-pdf') {
+        const file = files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        const html = result.value;
+        const container = document.createElement('div');
+        container.style.width = '800px';
+        container.style.padding = '40px';
+        container.style.backgroundColor = 'white';
+        container.style.color = 'black';
+        container.innerHTML = html;
+        document.body.appendChild(container);
+        const canvas = await html2canvas(container);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        setDownloadUrl(URL.createObjectURL(pdf.output('blob')));
+        document.body.removeChild(container);
+      } else if (activeTool === 'excel-to-pdf') {
+        const file = files[0];
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const doc = new jsPDF();
+        autoTable(doc, { head: [jsonData[0]], body: jsonData.slice(1) });
+        setDownloadUrl(URL.createObjectURL(doc.output('blob')));
+      } else if (activeTool === 'pdf-to-word') {
+        // Basic implementation: extract text and put in a simple HTML format then to Word blob
+        const file = files[0];
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: buf }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const pg = await pdf.getPage(i);
+          const textContent = await pg.getTextContent();
+          fullText += textContent.items.map(item => item.str).join(" ") + "\n\n";
+        }
+        const blob = new Blob(['<html><body>' + fullText.replace(/\n/g, '<br>') + '</body></html>'], { type: 'application/msword' });
+        setDownloadUrl(URL.createObjectURL(blob));
+      } else if (activeTool === 'pdf-compress') {
+        const file = files[0];
+        const bytes = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(bytes);
+        // "Compression" in browser is mostly about re-encoding images or stripping metadata
+        // Here we just re-save it which often reduces size if there were redundant objects
+        const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
+        setDownloadUrl(URL.createObjectURL(new Blob([compressedBytes], { type: "application/pdf" })));
       }
       
+      confetti();
       setStatus({ type: 'success', msg: 'Job Done! Click Download Now.' });
       setHistory([{ id: Date.now(), tool: tools.find(t => t.id === activeTool).name[lang], date: new Date().toLocaleTimeString() }, ...history]);
     } catch (err) { 
         console.error(err);
-        setStatus({ type: 'error', msg: 'Processing failed. Check file format.' });
+        setStatus({ type: 'error', msg: 'Processing failed.' });
     } finally { setLoading(false); }
   };
 
@@ -231,7 +276,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
 
       <main className="main-viewport">
         <AnimatePresence mode="wait">
@@ -312,13 +356,12 @@ export default function App() {
                              onClick={() => {
                                const link = document.createElement("a");
                                link.href = downloadUrl;
-                               const extension = activeTool === 'pdf-to-img' ? 'zip' : 'pdf';
+                               const extension = activeTool === 'pdf-to-img' ? 'zip' : 
+                                               activeTool === 'pdf-to-word' ? 'doc' : 'pdf';
                                link.download = `ORBITA_${activeTool}_${Date.now()}.${extension}`;
                                link.click();
-                               confetti(); // ยิงพลุตอนออมไฟล์ด้วย!
-                               setDownloadUrl(null);
-                               setFiles([]);
-                               setItems([]);
+                               confetti();
+                               setDownloadUrl(null); setFiles([]); setItems([]);
                              }} 
                              className="cta-btn-lux" 
                              style={{ background: 'linear-gradient(135deg, #00ff88, #0cc061)', color: '#000', padding: '16px 50px', borderRadius: '20px', fontWeight: '900', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', fontSize: '1.2rem', boxShadow: '0 0 40px rgba(0,255,136,0.4)' }}
@@ -355,10 +398,6 @@ export default function App() {
       </main>
 
       <AnimatePresence>
-
-
-
-
         {showPasswordModal && (
           <div className="modal-overlay blur-overlay" onClick={() => setShowPasswordModal(false)}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="pay-modal-lux" onClick={e => e.stopPropagation()} style={{ padding: '40px', borderRadius: '35px', textAlign: 'center', border: '1px solid rgba(255,77,77,0.3)' }}>
