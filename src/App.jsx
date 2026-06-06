@@ -50,7 +50,6 @@ export default function App() {
   const [items, setItems] = useState([]);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [lang, setLang] = useState("en");
   const [history, setHistory] = useState([]);
   const [password, setPassword] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -58,24 +57,23 @@ export default function App() {
 
   const t = (k) => {
     const dict = {
-      th: { heroTitle: "ยกระดับการจัดการ PDF ให้เป็นเรื่อง", heroGradient: "มหัศจรรย์", searchPlaceholder: "ค้นหาเครื่องมือ...", unlockPro: "ปลดล็อก Pro", files: "ไฟล์", noHistory: "ยังไม่มีประวัติการใช้งาน", recentActivity: "ประวัติการใช้งาน", landingTitle: "ปลดล็อคพลัง PDF ด้วย", landingDesc: "จัดการ แบ่ง รวม และรักษาความปลอดภัยไฟล์ของคุณได้ทันใจ", googleLogin: "เข้าสู่ระบบด้วย Google", welcomeBack: "ยินดีต้อนรับกลับมา", loginSubtitle: "ล็อคอินเพื่อเริ่มใช้งานฟรี", convertNow: "แปลงไฟล์ทันที", selected: "เลือกแล้ว", dropHint: "ลากไฟล์วางที่นี่ หรือ คลิกเพื่อเลือกไฟล์", supportFormat: "รองรับ PDF, DOCX, XLSX, รูปภาพ", home: "หน้าแรก", processing: "กำลังประมวลผล...", upgradeTitle: "อัปเกรดเป็น Orbita Pro", upgradeDesc: "เข้าถึงทุกเครื่องมือและฟีเจอร์ระดับมืออาชีพ", manage: "จัดการไฟล์", toPdf: "แปลงเป็น PDF", fromPdf: "แปลงจาก PDF", security: "ความปลอดภัย", utility: "เครื่องมือทั่วไป" },
-      en: { heroTitle: "Empower Your Workflow with", heroGradient: "PDF Magic", searchPlaceholder: "Search tools...", unlockPro: "Unlock Pro", files: "Files", noHistory: "No history yet", recentActivity: "Recent Activity", landingTitle: "Unlock PDF Magic with", landingDesc: "Manage, split, merge and secure your files instantly.", googleLogin: "Continue with Google", welcomeBack: "Welcome Back", loginSubtitle: "Sign in to start for free", convertNow: "Convert Now", selected: "Selected", dropHint: "Drop files here or click to browse", supportFormat: "Supports PDF, DOCX, XLSX, Images", home: "Home", processing: "Processing...", upgradeTitle: "Upgrade to Orbita Pro", upgradeDesc: "Access all pro tools and professional features", manage: "Manage Files", toPdf: "Convert to PDF", fromPdf: "Convert from PDF", security: "Security", utility: "Utility" }
+      heroTitle: "Empower Your Workflow with", heroGradient: "PDF Magic", searchPlaceholder: "Search tools...", unlockPro: "Unlock Pro", files: "Files", noHistory: "No history yet", recentActivity: "Recent Activity", landingTitle: "Unlock PDF Magic with", landingDesc: "Manage, split, merge and secure your files instantly.", googleLogin: "Continue with Google", welcomeBack: "Welcome Back", loginSubtitle: "Sign in to start for free", convertNow: "Convert Now", selected: "Selected", dropHint: "Drop files here or click to browse", supportFormat: "Supports PDF, DOCX, XLSX, Images", home: "Home", processing: "Processing...", upgradeTitle: "Upgrade to Orbita Pro", upgradeDesc: "Access all pro tools and professional features", manage: "Manage Files", toPdf: "Convert to PDF", fromPdf: "Convert from PDF", security: "Security", utility: "Utility"
     };
-    return dict[lang][k] || k;
+    return dict[k] || k;
   };
 
   const tools = [
-    { id: 'pdf-merge', name: { th: 'รวม PDF', en: 'Merge PDF' }, desc: { th: 'รวมหลายไฟล์เป็นหนึ่งเดียว', en: 'Combine multiple files into one' }, cat: 'manage', color: 'linear-gradient(135deg, #6366f1, #a855f7)', icon: <Layers /> },
-    { id: 'pdf-split', name: { th: 'แยก PDF', en: 'Split PDF' }, desc: { th: 'แยกหน้าไฟล์ PDF ออกมา', en: 'Extract pages from your PDF' }, cat: 'manage', color: 'linear-gradient(135deg, #06b6d4, #3b82f6)', icon: <Move /> },
-    { id: 'pdf-reorder', name: { th: 'สลับหน้า PDF', en: 'Reorder Pages' }, desc: { th: 'สลับลำดับหน้าเอกสาร', en: 'Rearrange PDF page order' }, cat: 'manage', color: 'linear-gradient(135deg, #8b5cf6, #d946ef)', icon: <GripVertical /> },
-    { id: 'img-to-pdf', name: { th: 'รูปภาพเป็น PDF', en: 'Image to PDF' }, desc: { th: 'แปลงรูปภาพเป็นเอกสาร', en: 'Convert images to PDF docs' }, cat: 'toPdf', color: 'linear-gradient(135deg, #f59e0b, #ef4444)', icon: <FileImage /> },
-    { id: 'word-to-pdf', name: { th: 'Word เป็น PDF', en: 'Word to PDF' }, desc: { th: 'แปลงไฟล์ Word เป็น PDF', en: 'Convert Word docs to PDF' }, cat: 'toPdf', color: 'linear-gradient(135deg, #2563eb, #3b82f6)', icon: <FileText /> },
-    { id: 'excel-to-pdf', name: { th: 'Excel เป็น PDF', en: 'Excel to PDF' }, desc: { th: 'แปลงตาราง Excel เป็น PDF', en: 'Convert Excel sheets to PDF' }, cat: 'toPdf', color: 'linear-gradient(135deg, #10b981, #059669)', icon: <FileSpreadsheet /> },
-    { id: 'pdf-to-img', name: { th: 'PDF เป็น PNG', en: 'PDF to PNG' }, desc: { th: 'แปลงหน้าเอกสารเป็นไฟล์ PNG', en: 'Extract pages as PNG images' }, cat: 'fromPdf', color: 'linear-gradient(135deg, #10b981, #3b82f6)', icon: <Presentation /> },
-    { id: 'pdf-to-word', name: { th: 'PDF เป็น Word', en: 'PDF to Word' }, desc: { th: 'แปลงเอกสารกลับสู่ MS Word', en: 'Convert PDF back to Word' }, cat: 'fromPdf', color: 'linear-gradient(135deg, #3b82f6, #6366f1)', icon: <FileType2 /> },
-    { id: 'pdf-protect', name: { th: 'ล็อค PDF', en: 'Protect PDF' }, desc: { th: 'ตั้งรหัสผ่านความปลอดภัย', en: 'Set password protection' }, cat: 'security', color: 'linear-gradient(135deg, #ef4444, #8b5cf6)', icon: <Lock /> },
-    { id: 'pdf-unlock', name: { th: 'ปลดล็อค PDF', en: 'Unlock PDF' }, desc: { th: 'ลบรหัสผ่านออกจากไฟล์', en: 'Remove PDF password' }, cat: 'security', color: 'linear-gradient(135deg, #22c55e, #10b981)', icon: <Unlock /> },
-    { id: 'pdf-compress', name: { th: 'ลดขนาด PDF', en: 'Compress PDF' }, desc: { th: 'ย่อขนาดไฟล์ให้เล็กลง', en: 'Reduce PDF file size' }, cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 /> }
+    { id: 'pdf-merge', name: 'Merge PDF', desc: 'Combine multiple files into one', cat: 'manage', color: 'linear-gradient(135deg, #6366f1, #a855f7)', icon: <Layers /> },
+    { id: 'pdf-split', name: 'Split PDF', desc: 'Extract pages from your PDF', cat: 'manage', color: 'linear-gradient(135deg, #06b6d4, #3b82f6)', icon: <Move /> },
+    { id: 'pdf-reorder', name: 'Reorder Pages', desc: 'Rearrange PDF page order', cat: 'manage', color: 'linear-gradient(135deg, #8b5cf6, #d946ef)', icon: <GripVertical /> },
+    { id: 'img-to-pdf', name: 'Image to PDF', desc: 'Convert images to PDF docs', cat: 'toPdf', color: 'linear-gradient(135deg, #f59e0b, #ef4444)', icon: <FileImage /> },
+    { id: 'word-to-pdf', name: 'Word to PDF', desc: 'Convert Word docs to PDF', cat: 'toPdf', color: 'linear-gradient(135deg, #2563eb, #3b82f6)', icon: <FileText /> },
+    { id: 'excel-to-pdf', name: 'Excel to PDF', desc: 'Convert Excel sheets to PDF', cat: 'toPdf', color: 'linear-gradient(135deg, #10b981, #059669)', icon: <FileSpreadsheet /> },
+    { id: 'pdf-to-img', name: 'PDF to PNG', desc: 'Extract pages as PNG images', cat: 'fromPdf', color: 'linear-gradient(135deg, #10b981, #3b82f6)', icon: <Presentation /> },
+    { id: 'pdf-to-word', name: 'PDF to Word', desc: 'Convert PDF back to Word', cat: 'fromPdf', color: 'linear-gradient(135deg, #3b82f6, #6366f1)', icon: <FileType2 /> },
+    { id: 'pdf-protect', name: 'Protect PDF', desc: 'Set password protection', cat: 'security', color: 'linear-gradient(135deg, #ef4444, #8b5cf6)', icon: <Lock /> },
+    { id: 'pdf-unlock', name: 'Unlock PDF', desc: 'Remove PDF password', cat: 'security', color: 'linear-gradient(135deg, #22c55e, #10b981)', icon: <Unlock /> },
+    { id: 'pdf-compress', name: 'Compress PDF', desc: 'Reduce PDF file size', cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 /> }
   ];
 
   const handleToolClick = (tool) => {
@@ -251,7 +249,7 @@ export default function App() {
       
       confetti();
       setStatus({ type: 'success', msg: 'Job Done! Click Download Now.' });
-      setHistory([{ id: Date.now(), tool: tools.find(t => t.id === activeTool).name[lang], date: new Date().toLocaleTimeString() }, ...history]);
+      setHistory([{ id: Date.now(), tool: tools.find(t => t.id === activeTool).name, date: new Date().toLocaleTimeString() }, ...history]);
     } catch (err) { 
         console.error(err);
         setStatus({ type: 'error', msg: 'Processing failed.' });
@@ -270,10 +268,6 @@ export default function App() {
           <span className="logo-text">ORBITA <span className="text-gradient">PDF</span></span>
         </div>
         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div className="lang-toggle glass-sm">
-            <button className={lang === 'th' ? 'active' : ''} onClick={() => setLang('th')}>TH</button>
-            <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
-          </div>
         </div>
       </header>
 
@@ -291,7 +285,7 @@ export default function App() {
                     </div>
                     <div className="tools-sections" style={{ marginTop: '4rem' }}>
                     {['manage', 'toPdf', 'fromPdf', 'security', 'utility'].map(cat => {
-                        const catTools = tools.filter(tx => tx.cat === cat && (tx.name.en.toLowerCase().includes(searchTerm.toLowerCase()) || tx.name.th.includes(searchTerm)));
+                        const catTools = tools.filter(tx => tx.cat === cat && (tx.name.toLowerCase().includes(searchTerm.toLowerCase())));
                         if (catTools.length === 0) return null;
                         return (
                           <section key={cat} className="tool-group-section" style={{ marginBottom: '3rem' }}>
@@ -300,7 +294,7 @@ export default function App() {
                               {catTools.map(tool => (
                                 <motion.div whileHover={{ y: -5 }} key={tool.id} className="tool-card-lux glass" onClick={() => handleToolClick(tool)}>
                                    <div className="tool-icon-box" style={{ background: tool.color }}>{tool.icon}</div>
-                                   <div className="tool-info"><h3>{tool.name[lang]}</h3><p>{tool.desc[lang]}</p></div>
+                                   <div className="tool-info"><h3>{tool.name}</h3><p>{tool.desc}</p></div>
                                 </motion.div>
                               ))}
                             </div>
@@ -315,7 +309,7 @@ export default function App() {
                        <button className="back-btn-lux" onClick={() => setActiveTool(null)}><ArrowLeft size={18} /> Home</button>
                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                           <div style={{ background: tools.find(tx => tx.id === activeTool).color, width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{tools.find(tx => tx.id === activeTool).icon}</div>
-                          <h2>{tools.find(tx => tx.id === activeTool).name[lang]}</h2>
+                          <h2>{tools.find(tx => tx.id === activeTool).name}</h2>
                        </div>
                        
                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 15px', borderRadius: '12px', border: '1px solid rgba(0,255,136,0.2)', background: 'rgba(0,255,136,0.05)' }}>
