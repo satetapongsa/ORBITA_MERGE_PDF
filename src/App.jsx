@@ -53,7 +53,26 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [password, setPassword] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [usageCount, setUsageCount] = useState(0);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem('orbitaUsageDate');
+    const savedCount = localStorage.getItem('orbitaUsageCount');
+    if (savedDate === today) {
+      setUsageCount(parseInt(savedCount || "0"));
+    } else {
+      localStorage.setItem('orbitaUsageDate', today);
+      localStorage.setItem('orbitaUsageCount', "0");
+      setUsageCount(0);
+    }
+  }, []);
 
   const t = (k) => {
     const dict = {
@@ -63,20 +82,28 @@ export default function App() {
   };
 
   const tools = [
-    { id: 'pdf-merge', name: 'Merge PDF', desc: 'Combine multiple files into one', cat: 'manage', color: 'linear-gradient(135deg, #6366f1, #a855f7)', icon: <Layers /> },
-    { id: 'pdf-split', name: 'Split PDF', desc: 'Extract pages from your PDF', cat: 'manage', color: 'linear-gradient(135deg, #06b6d4, #3b82f6)', icon: <Move /> },
-    { id: 'pdf-reorder', name: 'Reorder Pages', desc: 'Rearrange PDF page order', cat: 'manage', color: 'linear-gradient(135deg, #8b5cf6, #d946ef)', icon: <GripVertical /> },
-    { id: 'img-to-pdf', name: 'Image to PDF', desc: 'Convert images to PDF docs', cat: 'toPdf', color: 'linear-gradient(135deg, #f59e0b, #ef4444)', icon: <FileImage /> },
-    { id: 'word-to-pdf', name: 'Word to PDF', desc: 'Convert Word docs to PDF', cat: 'toPdf', color: 'linear-gradient(135deg, #2563eb, #3b82f6)', icon: <FileText /> },
-    { id: 'excel-to-pdf', name: 'Excel to PDF', desc: 'Convert Excel sheets to PDF', cat: 'toPdf', color: 'linear-gradient(135deg, #10b981, #059669)', icon: <FileSpreadsheet /> },
-    { id: 'pdf-to-img', name: 'PDF to PNG', desc: 'Extract pages as PNG images', cat: 'fromPdf', color: 'linear-gradient(135deg, #10b981, #3b82f6)', icon: <Presentation /> },
-    { id: 'pdf-to-word', name: 'PDF to Word', desc: 'Convert PDF back to Word', cat: 'fromPdf', color: 'linear-gradient(135deg, #3b82f6, #6366f1)', icon: <FileType2 /> },
-    { id: 'pdf-protect', name: 'Protect PDF', desc: 'Set password protection', cat: 'security', color: 'linear-gradient(135deg, #ef4444, #8b5cf6)', icon: <Lock /> },
-    { id: 'pdf-unlock', name: 'Unlock PDF', desc: 'Remove PDF password', cat: 'security', color: 'linear-gradient(135deg, #22c55e, #10b981)', icon: <Unlock /> },
-    { id: 'pdf-compress', name: 'Compress PDF', desc: 'Reduce PDF file size', cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 /> }
+    { id: 'pdf-merge', name: 'Merge PDF', desc: 'Combine multiple files into one', cat: 'manage', color: 'linear-gradient(135deg, #6366f1, #a855f7)', icon: <Layers />, premium: false },
+    { id: 'pdf-split', name: 'Split PDF', desc: 'Extract pages from your PDF', cat: 'manage', color: 'linear-gradient(135deg, #06b6d4, #3b82f6)', icon: <Move />, premium: false },
+    { id: 'pdf-reorder', name: 'Reorder Pages', desc: 'Rearrange PDF page order', cat: 'manage', color: 'linear-gradient(135deg, #8b5cf6, #d946ef)', icon: <GripVertical />, premium: false },
+    { id: 'img-to-pdf', name: 'Image to PDF', desc: 'Convert images to PDF docs', cat: 'toPdf', color: 'linear-gradient(135deg, #f59e0b, #ef4444)', icon: <FileImage />, premium: false },
+    { id: 'word-to-pdf', name: 'Word to PDF', desc: 'Convert Word docs to PDF', cat: 'toPdf', color: 'linear-gradient(135deg, #2563eb, #3b82f6)', icon: <FileText />, premium: true },
+    { id: 'excel-to-pdf', name: 'Excel to PDF', desc: 'Convert Excel sheets to PDF', cat: 'toPdf', color: 'linear-gradient(135deg, #10b981, #059669)', icon: <FileSpreadsheet />, premium: true },
+    { id: 'pdf-to-img', name: 'PDF to PNG', desc: 'Extract pages as PNG images', cat: 'fromPdf', color: 'linear-gradient(135deg, #10b981, #3b82f6)', icon: <Presentation />, premium: true },
+    { id: 'pdf-to-word', name: 'PDF to Word', desc: 'Convert PDF back to Word', cat: 'fromPdf', color: 'linear-gradient(135deg, #3b82f6, #6366f1)', icon: <FileType2 />, premium: true },
+    { id: 'pdf-protect', name: 'Protect PDF', desc: 'Set password protection', cat: 'security', color: 'linear-gradient(135deg, #ef4444, #8b5cf6)', icon: <Lock />, premium: true },
+    { id: 'pdf-unlock', name: 'Unlock PDF', desc: 'Remove PDF password', cat: 'security', color: 'linear-gradient(135deg, #22c55e, #10b981)', icon: <Unlock />, premium: true },
+    { id: 'pdf-compress', name: 'Compress PDF', desc: 'Reduce PDF file size', cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 />, premium: false }
   ];
 
   const handleToolClick = (tool) => {
+    if (tool.premium && (!user || !user.is_pro)) {
+      setShowPayModal(true);
+      return;
+    }
+    if ((!user || !user.is_pro) && usageCount >= 3) {
+      setShowPayModal(true);
+      return;
+    }
     setActiveTool(tool.id); setFiles([]); setItems([]); setDownloadUrl(null);
   };
 
@@ -250,6 +277,11 @@ export default function App() {
       confetti();
       setStatus({ type: 'success', msg: 'Job Done! Click Download Now.' });
       setHistory([{ id: Date.now(), tool: tools.find(t => t.id === activeTool).name, date: new Date().toLocaleTimeString() }, ...history]);
+      if (!user || !user.is_pro) {
+        const newCount = usageCount + 1;
+        setUsageCount(newCount);
+        localStorage.setItem('orbitaUsageCount', newCount.toString());
+      }
     } catch (err) { 
         console.error(err);
         setStatus({ type: 'error', msg: 'Processing failed.' });
@@ -268,6 +300,19 @@ export default function App() {
           <span className="logo-text">ORBITA <span className="text-gradient">PDF</span></span>
         </div>
         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {user ? (
+            <>
+              <span style={{ color: '#fff' }}>{user.email}</span>
+              {user.is_pro ? (
+                <span style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', padding: '5px 10px', borderRadius: '8px', color: '#fff', fontWeight: 'bold' }}>PRO</span>
+              ) : (
+                <button className="cta-btn-lux cyan-glow" onClick={() => setShowPayModal(true)} style={{ padding: '8px 16px', background: 'var(--primary)', color: '#000', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Subscribe (29 THB)</button>
+              )}
+              <button onClick={() => setUser(null)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer' }}>Logout</button>
+            </>
+          ) : (
+             <button className="cta-btn-lux" onClick={() => setShowLoginModal(true)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Login</button>
+          )}
         </div>
       </header>
 
@@ -392,6 +437,50 @@ export default function App() {
       </main>
 
       <AnimatePresence>
+        {showLoginModal && (
+          <div className="modal-overlay blur-overlay" onClick={() => setShowLoginModal(false)}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="pay-modal-lux" onClick={e => e.stopPropagation()} style={{ padding: '40px', borderRadius: '35px', textAlign: 'center', background: 'rgba(20,20,20,0.95)', border: '1px solid rgba(255,255,255,0.1)', width: '90%', maxWidth: '400px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: '900', marginBottom: '20px' }}>Login / Register</h2>
+              <input type="email" placeholder="Email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', marginBottom: '10px', outline: 'none' }} />
+              <input type="password" placeholder="Password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', marginBottom: '20px', outline: 'none' }} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                 <button onClick={async () => {
+                    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: authEmail, password: authPassword }) });
+                    if(res.ok) { setUser(await res.json()); setShowLoginModal(false); } else { const err = await res.json(); alert('Login Failed: ' + (err.error || '')); }
+                 }} style={{ flex: 1, padding: '15px', background: 'var(--primary)', color: '#000', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Login</button>
+                 <button onClick={async () => {
+                    const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: authEmail, password: authPassword }) });
+                    if(res.ok) { setUser(await res.json()); setShowLoginModal(false); } else { const err = await res.json(); alert('Registration Failed: ' + (err.error || '')); }
+                 }} style={{ flex: 1, padding: '15px', background: 'transparent', color: '#fff', border: '1px solid var(--primary)', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Register</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+        
+        {showPayModal && (
+          <div className="modal-overlay blur-overlay" onClick={() => setShowPayModal(false)}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="pay-modal-lux" onClick={e => e.stopPropagation()} style={{ padding: '40px', borderRadius: '35px', textAlign: 'center', background: 'rgba(20,20,20,0.95)', border: '1px solid rgba(255,215,0,0.3)', width: '90%', maxWidth: '400px' }}>
+              <div style={{ background: 'rgba(255,215,0,0.1)', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}><CreditCard size={30} color="#ffd700" /></div>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#ffd700', marginBottom: '10px' }}>Upgrade to PRO</h2>
+              <p style={{ opacity: 0.8, marginBottom: '30px' }}>Unlock all premium tools and remove daily limits for only <strong>29 THB / month</strong>.</p>
+              
+              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '20px', borderRadius: '15px', marginBottom: '20px', textAlign: 'left' }}>
+                <input type="text" placeholder="Card Number (Mock)" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', marginBottom: '10px', outline: 'none' }} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                   <input type="text" placeholder="MM/YY" style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' }} />
+                   <input type="text" placeholder="CVC" style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' }} />
+                </div>
+              </div>
+              
+              <button onClick={async () => {
+                 if (!user) { alert('Please login first!'); setShowPayModal(false); setShowLoginModal(true); return; }
+                 const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email }) });
+                 if(res.ok) { setUser(await res.json()); setShowPayModal(false); confetti(); alert('Subscription Successful!'); } else { alert('Payment Failed'); }
+              }} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg, #ffd700, #ffaa00)', color: '#000', border: 'none', borderRadius: '15px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer' }}>Pay 29 THB</button>
+            </motion.div>
+          </div>
+        )}
+
         {showPasswordModal && (
           <div className="modal-overlay blur-overlay" onClick={() => setShowPasswordModal(false)}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="pay-modal-lux" onClick={e => e.stopPropagation()} style={{ padding: '40px', borderRadius: '35px', textAlign: 'center', border: '1px solid rgba(255,77,77,0.3)' }}>
