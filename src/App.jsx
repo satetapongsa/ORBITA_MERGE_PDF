@@ -44,6 +44,70 @@ const SortableItem = ({ id, url, index, onDelete }) => {
   );
 };
 
+const sharpenImage = (imageData, weight = 1.2) => {
+  const w = imageData.width;
+  const h = imageData.height;
+  const src = imageData.data;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const outputData = ctx.createImageData(w, h);
+  const dst = outputData.data;
+
+  const kernel = [
+     0, -1,  0,
+    -1, 4.5 + weight, -1,
+     0, -1,  0
+  ];
+  const kSize = 3;
+  const halfK = 1;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      
+      if (y < halfK || y >= h - halfK || x < halfK || x >= w - halfK) {
+        dst[idx] = src[idx];
+        dst[idx+1] = src[idx+1];
+        dst[idx+2] = src[idx+2];
+        dst[idx+3] = src[idx+3];
+        continue;
+      }
+
+      let rSum = 0, gSum = 0, bSum = 0;
+      for (let ky = 0; ky < kSize; ky++) {
+        for (let kx = 0; kx < kSize; kx++) {
+          const px = x + kx - halfK;
+          const py = y + ky - halfK;
+          const pidx = (py * w + px) * 4;
+          const weightValue = kernel[ky * kSize + kx];
+          rSum += src[pidx] * weightValue;
+          gSum += src[pidx+1] * weightValue;
+          bSum += src[pidx+2] * weightValue;
+        }
+      }
+
+      dst[idx] = Math.min(255, Math.max(0, rSum));
+      dst[idx+1] = Math.min(255, Math.max(0, gSum));
+      dst[idx+2] = Math.min(255, Math.max(0, bSum));
+      dst[idx+3] = src[idx+3];
+    }
+  }
+  return outputData;
+};
+
+const adjustContrast = (imageData, contrast = 30) => {
+  const data = imageData.data;
+  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+  for (let i = 0; i < data.length; i += 4) {
+    data[i]     = factor * (data[i] - 128) + 128;
+    data[i + 1] = factor * (data[i + 1] - 128) + 128;
+    data[i + 2] = factor * (data[i + 2] - 128) + 128;
+  }
+  return imageData;
+};
+
 export default function App() {
   const [status, setStatus] = useState(null);
   const [activeTool, setActiveTool] = useState(null);
@@ -66,7 +130,27 @@ export default function App() {
   const [modalError, setModalError] = useState("");
   const [modalSuccess, setModalSuccess] = useState("");
   const [usageCount, setUsageCount] = useState(0);
+  const [upscaleFactor, setUpscaleFactor] = useState(2);
+  const [enhancementType, setEnhancementType] = useState("sharpen");
+  const [upscaledImageUrl, setUpscaledImageUrl] = useState(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState(null);
+  const [sliderPosition, setSliderPosition] = useState(50);
   const fileInputRef = useRef(null);
+  const sliderRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(600);
+
+  useEffect(() => {
+    if (sliderRef.current) {
+      setContainerWidth(sliderRef.current.clientWidth);
+      const observer = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          setContainerWidth(entry.contentRect.width);
+        }
+      });
+      observer.observe(sliderRef.current);
+      return () => observer.disconnect();
+    }
+  }, [originalImageUrl, upscaledImageUrl]);
 
   useEffect(() => {
     const today = new Date().toDateString();
@@ -99,7 +183,8 @@ export default function App() {
     { id: 'pdf-to-word', name: 'PDF to Word', desc: 'Convert PDF back to Word', cat: 'fromPdf', color: 'linear-gradient(135deg, #3b82f6, #6366f1)', icon: <FileType2 />, premium: true },
     { id: 'pdf-protect', name: 'Protect PDF', desc: 'Set password protection', cat: 'security', color: 'linear-gradient(135deg, #ef4444, #8b5cf6)', icon: <Lock />, premium: true },
     { id: 'pdf-unlock', name: 'Unlock PDF', desc: 'Remove PDF password', cat: 'security', color: 'linear-gradient(135deg, #22c55e, #10b981)', icon: <Unlock />, premium: true },
-    { id: 'pdf-compress', name: 'Compress PDF', desc: 'Reduce PDF file size', cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 />, premium: false }
+    { id: 'pdf-compress', name: 'Compress PDF', desc: 'Reduce PDF file size', cat: 'utility', color: 'linear-gradient(135deg, #f97316, #f59e0b)', icon: <Minimize2 />, premium: false },
+    { id: 'image-upscaler', name: 'Image Upscaler', desc: 'Upscale & enhance image clarity (2x/4x)', cat: 'utility', color: 'linear-gradient(135deg, #ec4899, #f43f5e)', icon: <Sparkles />, premium: false }
   ];
 
   const handleToolClick = (tool) => {
@@ -111,12 +196,34 @@ export default function App() {
       setShowPayModal(true);
       return;
     }
-    setActiveTool(tool.id); setFiles([]); setItems([]); setDownloadUrl(null);
+    setActiveTool(tool.id); 
+    setFiles([]); 
+    setItems([]); 
+    setDownloadUrl(null);
+    setUpscaledImageUrl(null);
+    setOriginalImageUrl(null);
+    setSliderPosition(50);
   };
 
   const handleFileSelect = async (e) => {
     const selFiles = Array.from(e.target.files);
     setFiles(selFiles);
+    
+    if (activeTool === 'image-upscaler') {
+      if (selFiles.length > 0) {
+        const file = selFiles[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setOriginalImageUrl(event.target.result);
+          setUpscaledImageUrl(null);
+          setDownloadUrl(null);
+          setSliderPosition(50);
+        };
+        reader.readAsDataURL(file);
+      }
+      return;
+    }
+
     if (activeTool === 'pdf-merge' || activeTool === 'pdf-split' || activeTool === 'pdf-reorder' || activeTool === 'pdf-to-img' || activeTool === 'pdf-protect' || activeTool === 'pdf-unlock') {
         setLoading(true);
         const newItems = [];
@@ -149,6 +256,49 @@ export default function App() {
     
     setLoading(true);
     try {
+      if (activeTool === 'image-upscaler') {
+        const file = files[0];
+        if (!file) throw new Error("No image file selected.");
+        
+        const img = new Image();
+        img.src = originalImageUrl;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        const canvas = document.createElement('canvas');
+        const targetWidth = img.width * upscaleFactor;
+        const targetHeight = img.height * upscaleFactor;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        
+        let imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+        
+        if (enhancementType === 'sharpen') {
+          imgData = sharpenImage(imgData, 1.5);
+          ctx.putImageData(imgData, 0, 0);
+        } else if (enhancementType === 'contrast') {
+          imgData = adjustContrast(imgData, 25);
+          imgData = sharpenImage(imgData, 0.8);
+          ctx.putImageData(imgData, 0, 0);
+        }
+        
+        const upscaledUrl = canvas.toDataURL('image/png');
+        setUpscaledImageUrl(upscaledUrl);
+        setDownloadUrl(upscaledUrl);
+        confetti();
+        setStatus({ type: 'success', msg: 'Image upscaled and enhanced successfully!' });
+        setHistory([{ id: Date.now(), tool: 'Image Upscaler', date: new Date().toLocaleTimeString() }, ...history]);
+        setLoading(false);
+        return;
+      }
+
       if (activeTool === 'pdf-to-img') {
         const zip = new JSZip();
         for (const it of items) {
@@ -488,32 +638,169 @@ export default function App() {
                           <ShieldCheck size={16} color="#00ff88" /><span style={{ fontSize: '0.75rem', color: '#00ff88' }}>SECURE LOCAL PROCESSING</span>
                        </div>
                     </div>
-                    <div className="dropzone-area-lux glass-card" onClick={() => fileInputRef.current.click()} style={{ minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                       <input type="file" ref={fileInputRef} hidden multiple onChange={handleFileSelect} />
-                       {items.length === 0 && files.length === 0 ? (
-                         <div style={{ textAlign: 'center' }}><FilePlus size={48} color="#00f2ff" /><p>{t('dropHint')}</p></div>
-                       ) : (
-                         <div style={{ width: '100%' }}>
-                            {(activeTool === 'pdf-merge' || activeTool === 'pdf-split' || activeTool === 'pdf-reorder') ? (
-                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
-                                if (active && over && active.id !== over.id) {
-                                  setItems(itms => {
-                                    const o = itms.findIndex(i => i.id === active.id);
-                                    const n = itms.findIndex(i => i.id === over.id);
-                                    return arrayMove(itms, o, n);
-                                  });
-                                }
-                              }}><SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '15px', padding: '20px' }}>
-                                    {items.map((it, idx) => <SortableItem key={it.id} id={it.id} index={idx} url={it.url} onDelete={id => setItems(p => p.filter(x => x.id !== id))} />)}
-                                  </div>
-                                </SortableContext></DndContext>
-                            ) : (
-                              <div style={{ padding: '20px' }}>{files.map((f, i) => <div key={i} className="glass" style={{ padding: '10px', marginBottom: '5px' }}>{f.name}</div>)}</div>
-                            )}
-                         </div>
-                       )}
-                    </div>
+                    {activeTool === 'image-upscaler' && originalImageUrl ? (
+                      <div className="upscaler-workspace-lux" onClick={e => e.stopPropagation()}>
+                        {/* Preview Card */}
+                        <div className="upscaler-preview-card">
+                          {upscaledImageUrl ? (
+                            <div 
+                              ref={sliderRef}
+                              className="comparison-slider-container"
+                              onMouseMove={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const x = e.clientX - rect.left;
+                                const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                                setSliderPosition(pct);
+                              }}
+                              onTouchMove={(e) => {
+                                if (e.touches.length === 0) return;
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const x = e.touches[0].clientX - rect.left;
+                                const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                                setSliderPosition(pct);
+                              }}
+                            >
+                              {/* Original (Before) */}
+                              <img src={originalImageUrl} alt="original" className="slider-img" />
+                              <span className="slider-label slider-label-original">Original</span>
+
+                              {/* Upscaled (After) */}
+                              <div 
+                                className="slider-overlay" 
+                                style={{ width: `${sliderPosition}%` }}
+                              >
+                                <img 
+                                  src={upscaledImageUrl} 
+                                  alt="upscaled" 
+                                  className="slider-overlay-img" 
+                                  style={{ width: containerWidth, height: '100%', objectFit: 'contain' }}
+                                />
+                              </div>
+                              <span className="slider-label slider-label-upscaled">Upscaled ({upscaleFactor}X)</span>
+
+                              {/* Divider separator */}
+                              <div 
+                                className="slider-divider-line"
+                                style={{ left: `${sliderPosition}%` }}
+                              />
+                              <div 
+                                className="slider-handle-circle"
+                                style={{ left: `${sliderPosition}%` }}
+                              >
+                                <GripVertical size={16} />
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: 'center', maxWidth: '100%', padding: '20px' }}>
+                              <img 
+                                src={originalImageUrl} 
+                                alt="original preview" 
+                                style={{ maxHeight: '320px', maxWidth: '100%', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                              />
+                              <p style={{ marginTop: '15px', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
+                                Press <strong>Upscale Now</strong> on the right to start scaling.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Controls Panel */}
+                        <div className="upscaler-controls-card">
+                          <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', textAlign: 'left' }}>Upscaler Settings</h3>
+                          
+                          <div className="control-section-lux">
+                            <span className="control-label-lux">Resolution Scale</span>
+                            <div className="scale-buttons-group">
+                              <button 
+                                type="button"
+                                className={`scale-btn-lux ${upscaleFactor === 2 ? 'active' : ''}`}
+                                onClick={() => { setUpscaleFactor(2); setUpscaledImageUrl(null); setDownloadUrl(null); }}
+                              >
+                                2X (Medium)
+                              </button>
+                              <button 
+                                type="button"
+                                className={`scale-btn-lux ${upscaleFactor === 4 ? 'active' : ''}`}
+                                onClick={() => { setUpscaleFactor(4); setUpscaledImageUrl(null); setDownloadUrl(null); }}
+                              >
+                                4X (Ultra)
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="control-section-lux">
+                            <span className="control-label-lux">Enhancement Method</span>
+                            <select 
+                              className="filter-select-lux" 
+                              value={enhancementType}
+                              onChange={e => { setEnhancementType(e.target.value); setUpscaledImageUrl(null); setDownloadUrl(null); }}
+                            >
+                              <option value="sharpen">🔥 Smart Sharpen (Recommended)</option>
+                              <option value="contrast">✨ Texture & Contrast Boost</option>
+                              <option value="original-smooth">☁️ Soft Smoothing</option>
+                            </select>
+                          </div>
+
+                          {loading ? (
+                            <div className="upscaler-status-indicator">
+                              <Loader2 className="spin" size={16} />
+                              <span>Enhancing Pixels...</span>
+                            </div>
+                          ) : (
+                            <button 
+                              type="button"
+                              onClick={processFiles}
+                              className="cta-btn-lux cyan-glow"
+                              style={{ width: '100%', background: 'var(--primary)', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}
+                            >
+                              Upscale Now
+                            </button>
+                          )}
+
+                          <button 
+                            type="button"
+                            className="back-btn-lux"
+                            onClick={() => {
+                              setOriginalImageUrl(null);
+                              setUpscaledImageUrl(null);
+                              setFiles([]);
+                              setDownloadUrl(null);
+                            }}
+                            style={{ width: '100%', justifyContent: 'center' }}
+                          >
+                            Choose Another Image
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="dropzone-area-lux glass-card" onClick={() => fileInputRef.current.click()} style={{ minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <input type="file" ref={fileInputRef} hidden multiple={activeTool !== 'image-upscaler'} accept={activeTool === 'image-upscaler' ? "image/*" : undefined} onChange={handleFileSelect} />
+                         {items.length === 0 && files.length === 0 ? (
+                           <div style={{ textAlign: 'center' }}><FilePlus size={48} color="#00f2ff" /><p>{t('dropHint')}</p></div>
+                         ) : (
+                           <div style={{ width: '100%' }}>
+                              {(activeTool === 'pdf-merge' || activeTool === 'pdf-split' || activeTool === 'pdf-reorder') ? (
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
+                                  if (active && over && active.id !== over.id) {
+                                    setItems(itms => {
+                                      const o = itms.findIndex(i => i.id === active.id);
+                                      const n = itms.findIndex(i => i.id === over.id);
+                                      return arrayMove(itms, o, n);
+                                    });
+                                  }
+                                }}><SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '15px', padding: '20px' }}>
+                                      {items.map((it, idx) => <SortableItem key={it.id} id={it.id} index={idx} url={it.url} onDelete={id => setItems(p => p.filter(x => x.id !== id))} />)}
+                                    </div>
+                                  </SortableContext></DndContext>
+                              ) : (
+                                <div style={{ padding: '20px' }}>{files.map((f, i) => <div key={i} className="glass" style={{ padding: '10px', marginBottom: '5px' }}>{f.name}</div>)}</div>
+                              )}
+                           </div>
+                         )}
+                      </div>
+                    )}
+
                     {(files.length > 0 || items.length > 0) && (
                       <div className="action-bar-lux glass" style={{ marginTop: '2rem', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '20px' }}>
                          <span>{t('selected')}: {files.length || items.length}</span>
@@ -523,11 +810,12 @@ export default function App() {
                                const link = document.createElement("a");
                                link.href = downloadUrl;
                                const extension = activeTool === 'pdf-to-img' ? 'zip' : 
-                                               activeTool === 'pdf-to-word' ? 'doc' : 'pdf';
+                                               activeTool === 'pdf-to-word' ? 'doc' : 
+                                               activeTool === 'image-upscaler' ? 'png' : 'pdf';
                                link.download = `ORBITA_${activeTool}_${Date.now()}.${extension}`;
                                link.click();
                                confetti();
-                               setDownloadUrl(null); setFiles([]); setItems([]);
+                               setDownloadUrl(null); setFiles([]); setItems([]); setUpscaledImageUrl(null); setOriginalImageUrl(null);
                              }} 
                              className="cta-btn-lux" 
                              style={{ background: 'linear-gradient(135deg, #00ff88, #0cc061)', color: '#000', padding: '16px 50px', borderRadius: '20px', fontWeight: '900', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', fontSize: '1.2rem', boxShadow: '0 0 40px rgba(0,255,136,0.4)' }}
@@ -545,12 +833,13 @@ export default function App() {
                                 <><Loader2 className="spin" size={24} /> {t('processing')}</>
                               ) : (
                                 <>
-                                   <Wand2 size={26} /> 
-                                   {activeTool === 'pdf-protect' ? 'Lock File' : 
-                                    activeTool === 'pdf-unlock' ? 'Unlock File' : 
-                                    activeTool === 'pdf-merge' ? 'Merge PDF' :
-                                    activeTool === 'pdf-reorder' ? 'Reorder Pages' :
-                                    t('convertNow')}
+                                    <Wand2 size={26} /> 
+                                    {activeTool === 'pdf-protect' ? 'Lock File' : 
+                                     activeTool === 'pdf-unlock' ? 'Unlock File' : 
+                                     activeTool === 'pdf-merge' ? 'Merge PDF' :
+                                     activeTool === 'pdf-reorder' ? 'Reorder Pages' :
+                                     activeTool === 'image-upscaler' ? 'Upscale Image' :
+                                     t('convertNow')}
                                  </>
                               )}
                            </button>
