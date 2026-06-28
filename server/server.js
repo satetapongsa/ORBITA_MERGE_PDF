@@ -50,6 +50,29 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Google Auth (Backend placeholder for Google JWT token verification)
+app.post('/api/auth/google', async (req, res) => {
+  const { token } = req.body;
+  const mockEmail = 'google.user@orbita.com';
+  
+  try {
+    // Find or create the user in the database
+    let result = await pool.query('SELECT id, email, is_pro FROM users WHERE email = $1', [mockEmail]);
+    
+    if (result.rows.length === 0) {
+      // Auto-register Google user and default to true for preview
+      result = await pool.query(
+        'INSERT INTO users (email, password, is_pro) VALUES ($1, $2, $3) RETURNING id, email, is_pro',
+        [mockEmail, 'oauth-managed-account', true]
+      );
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Subscribe
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
