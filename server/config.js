@@ -1,6 +1,8 @@
 import path from 'node:path';
 
-const isProd = process.env.NODE_ENV === 'production';
+// Any Vercel deployment (production or preview) shares the real database, so treat it as production:
+// no test billing and no default session secret.
+const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is not set. Copy .env.example to .env and add your Neon connection string.');
