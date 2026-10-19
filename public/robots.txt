@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://orbita-merge-pdf.vercel.app/sitemap.xml

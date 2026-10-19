@@ -1,106 +1,74 @@
-# 🌌 ORBITA PDF Galaxy - All-in-One PDF Magic
+# PageSmith — merge, split & reorder PDFs
 
-**ORBITA PDF** is a premium, powerful, and secure web application designed to handle all your PDF needs. Built with a focus on privacy and performance, ORBITA processes everything **100% locally** in your browser, ensuring your sensitive documents never leave your device.
+A React + Express web app for merging, splitting and reordering PDF pages. It has user accounts, per-user private file storage, and daily export limits on a Free or Pro (20 THB/month) plan. User data lives in **Neon Postgres**.
 
-![ORBITA PDF Banner](https://img.shields.io/badge/ORBITA-PDF_GALAXY-blue?style=for-the-badge&logo=pdf&logoColor=white)
-![Version](https://img.shields.io/badge/Version-2.0.0-purple?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+| Plan | Price | Exports per day |
+|------|-------|-----------------|
+| Free | 0 THB | 5 |
+| Pro  | 20 THB / month | 20 + the **PageSmith 5.5 Pro** assistant |
 
----
+Each export (merge, split or reorder) uses one unit. The count resets at **midnight in `APP_TIMEZONE`** (default `Asia/Bangkok`).
 
-## ✨ Key Features
+## Quick start
 
-### 📂 File Management
-- **Merge PDF**: Combine multiple PDF files into a single document effortlessly.
-- **Split PDF**: Extract specific pages or split a large PDF into multiple files.
-- **Reorder Pages**: Drag and drop to rearrange page order with visual previews.
+```bash
+npm install
+cp .env.example .env          # then paste your Neon connection string into DATABASE_URL
+npm run db:migrate            # creates the tables (safe to re-run)
+npm run dev                   # API on :3001, web app on http://localhost:5173
+```
 
-### 🔄 Conversion Tools
-- **Image to PDF**: Convert JPG, PNG, and other images into high-quality PDFs.
-- **Office to PDF**: Transform Word (DOCX) and Excel (XLSX) files into PDFs.
-- **PDF to PNG**: Extract high-resolution images from your PDF pages.
-- **PDF to Word**: Convert your PDF back into an editable MS Word document.
+If `STRIPE_SECRET_KEY` is empty, the app runs in **test billing mode**: clicking Upgrade switches the account to Pro and charges nothing. The server refuses to start this way in production.
 
-### 🛡️ Security & Utility
-- **Protect PDF**: Secure your files with strong password encryption.
-- **Unlock PDF**: Remove passwords from protected PDFs (password required).
-- **Compress PDF**: Reduce file size without significant loss in quality.
+## Production
 
-### 🌍 Experience
-- **Privacy First**: Local processing means your data is safe.
-- **Bilingual Support**: Full support for **Thai (TH)** and **English (EN)**.
-- **Responsive Design**: Works beautifully on desktops, tablets, and mobile devices.
-- **Luxurious UI**: A futuristic, glassmorphism-inspired design with smooth animations.
+```bash
+npm run build                 # builds the React app into dist/
+NODE_ENV=production npm start # Express serves the API and dist/ on PORT
+```
 
----
+In production you must set `JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and `APP_URL`. Put `STORAGE_DIR` on a persistent disk.
 
-## 🚀 Getting Started
+### Stripe setup (THB)
+1. Optional: create a Product with a recurring price of **20 THB / month** and set `STRIPE_PRICE_ID`. If you skip this, checkout builds the price inline.
+2. Add a webhook endpoint at `https://<your-domain>/api/billing/webhook` with these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`.
+3. Turn on the Customer Portal in the Stripe dashboard. Users open it from the Account page to change their card or see invoices.
+4. Local testing: `stripe listen --forward-to localhost:3001/api/billing/webhook`.
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (Latest LTS version recommended)
-- [NPM](https://www.npmjs.com/)
+## How it works
 
-### Installation
+- **Auth**: passwords are hashed with bcrypt. The session is a JWT in an httpOnly cookie. Login and register are rate-limited.
+- **Database** (`server/schema.sql`):
+  - `users`: username, email and password hash.
+  - `payment_accounts`: the user's Stripe customer.
+  - `subscriptions`: status and period end, linked to the payment account.
+  - `daily_usage`: export count per user per day.
+  - `files`: metadata for stored files.
+- **Quota**: one atomic `INSERT … ON CONFLICT … WHERE count < limit`, so the limit holds even with parallel requests. If an export fails, its unit is given back.
+- **Files**: stored in `STORAGE_DIR/<userId>/<random>.pdf`. Every lookup checks that the file belongs to the user, and storage keys never come from user input.
+- **PDF processing**: done on the server with `pdf-lib`, so limits can't be bypassed from the browser. Page previews are drawn in the browser with `pdf.js`.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/satetapongsa/ORBITA_MERGE_PDF.git
-   cd ORBITA_MERGE_PDF
-   ```
+## Assistant (Pro)
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+Pro users can chat with **PageSmith 5.5 Pro** on the *Assistant* page. It can find files and answer questions about what's inside them, in Thai or English.
 
-3. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
+- Text is extracted from every uploaded or exported PDF (`server/text.js`) and stored per page in `file_pages`.
+- The model is given three tools: `list_files`, `search_text` and `read_pages`. Every query is scoped to the signed-in user, so it can only see that user's files.
+- Replies include clickable **Sources** that link to the files it used. Scanned or image-only PDFs have no text layer, and the assistant says so.
+- The provider and model are never sent to the browser. The API returns only `ASSISTANT_NAME`, and the system prompt keeps the persona. As a fallback, any reply sentence that names the provider is removed.
+- Each Pro user gets `ASSISTANT_DAILY_LIMIT` messages per day (default 100), with a burst limit of 12 per minute. Assistant messages don't count against exports.
 
-4. **Build for production**:
-   ```bash
-   npm run build
-   ```
+## Project layout
 
----
-
-## 🛠️ Technology Stack
-
-- **Core**: React 18, Vite
-- **Styling**: Vanilla CSS (Modern CSS variables, Flexbox, Grid)
-- **Animations**: Framer Motion
-- **PDF Engine**: `pdf-lib`, `pdfjs-dist`
-- **Other Libraries**: `jszip`, `mammoth` (Word), `xlsx` (Excel), `jspdf`, `canvas-confetti`
-- **Icons**: Lucide React
-
----
-
-## 📖 How it Works
-
-ORBITA PDF utilizes the power of modern browsers to perform complex document manipulations. By using Web Workers and the `pdf-lib` library, we can merge, split, and reorder pages directly in memory. For conversions, we use specialized libraries like `mammoth` for Word and `xlsx` for Excel, ensuring accuracy while keeping the process offline.
-
----
-
-## 🇹🇭 ภาษาไทย (Thai Details)
-
-**ORBITA PDF** คือเว็บแอปพลิเคชันจัดการ PDF ระดับพรีเมียมที่เน้นความปลอดภัยและความเป็นส่วนตัว ข้อมูลของคุณจะถูกประมวลผล **ภายในเครื่อง 100%** ไม่มีการอัปโหลดไฟล์ไปยังเซิร์ฟเวอร์
-
-### ฟีเจอร์เด่น:
-- รวมไฟล์ และ แยกหน้า PDF
-- จัดลำดับหน้าใหม่ด้วยระบบ Drag & Drop
-- แปลงไฟล์รูปภาพ, Word, Excel เป็น PDF
-- แปลง PDF กลับเป็น Word หรือรูปภาพ PNG
-- ล็อกไฟล์ด้วยรหัสผ่าน หรือ ปลดล็อกไฟล์
-- ลดขนาดไฟล์ PDF
-- รองรับทั้งภาษาไทยและอังกฤษ
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Built with ❤️ by ORBITA Team.**
+```
+server/            Express API
+  routes/          auth, files, tools (merge/split/organize), billing (Stripe + webhook)
+  plans.js         plans, daily usage, midnight reset
+  pdf.js           merge / split / assemble with pdf-lib
+  text.js          PDF text extraction for the assistant
+  assistant.js     assistant tool loop (provider hidden behind ASSISTANT_NAME)
+  storage.js       per-user file storage
+src/               React app (Vite)
+  pages/           Home, Merge, Split, Organize, Files, Account, Assistant, Auth
+  components/      Layout, Dropzone, PageThumb, ExportPanel, FilePicker, Toast
+```

@@ -1,0 +1,107 @@
+import { Router } from 'express';
+import JSZip from 'jszip';
+import { config } from '../config.js';
+import { one } from '../db.js';
+import { requireAuth } from '../auth.js';
+import { readFile, saveFile } from '../storage.js';
+import { merge, split, assemble, parseRanges } from '../pdf.js';
+import { getPlan, consumeExport, refundExport, getAccountSummary } from '../plans.js';
+import { getOwnedFile, toClient } from './files.js';
+import { indexFile } from '../text.js';
+
+const router = Router();
+router.use(requireAuth);
+
+const baseName = (name) => name.replace(/\.pdf$/i, '');
+
+async function loadOwned(userId, ids) {
+  const files = await Promise.all(ids.map((id) => getOwnedFile(userId, id)));
+  if (files.some((f) => !f || f.mime !== 'application/pdf')) {
+    throw Object.assign(new Error('One of the selected files is no longer available.'), { status: 404 });
+  }
+  return files;
+}
+
+/**
+ * Wraps an export: reserves one unit of today's quota, runs the job, stores the
+ * result in the user's folder and gives the unit back if anything fails.
+ */
+function exportTask(handler) {
+  return async (req, res) => {
+    const userId = req.user.id;
+    const { plan } = await getPlan(userId);
+    const used = await consumeExport(userId, plan.dailyLimit);
+    if (used === null) {
+      return res.status(429).json({
+        code: 'LIMIT_REACHED',
+        error: plan.id === 'free'
+          ? `You've used all ${plan.dailyLimit} free exports for today. Upgrade to Pro for ${config.plans.pro.dailyLimit} exports a day, or come back after midnight.`
+          : `You've used all ${plan.dailyLimit} exports for today. Your allowance resets at midnight.`,
+        account: await getAccountSummary(userId),
+      });
+    }
+    try {
+      const { buffer, name, ext = 'pdf', pages = null } = await handler(req);
+      const key = await saveFile(userId, buffer, ext);
+      const row = await one(
+        `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key)
+         VALUES ($1, 'output', $2, $3, $4, $5, $6) RETURNING *`,
+        [userId, name, ext === 'zip' ? 'application/zip' : 'application/pdf', buffer.length, pages, key],
+      );
+      indexFile(row);
+      res.status(201).json({ file: toClient(row), account: await getAccountSummary(userId) });
+    } catch (err) {
+      await refundExport(userId);
+      throw err;
+    }
+  };
+}
+
+router.post('/merge', exportTask(async (req) => {
+  const ids = Array.isArray(req.body.fileIds) ? req.body.fileIds : [];
+  if (ids.length < 2) throw Object.assign(new Error('Add at least two PDFs to merge.'), { status: 400 });
+  if (ids.length > 50) throw Object.assign(new Error('You can merge up to 50 files at once.'), { status: 400 });
+  const files = await loadOwned(req.user.id, ids);
+  const buffers = await Promise.all(files.map((f) => readFile(req.user.id, f.storage_key)));
+  const out = Buffer.from(await merge(buffers));
+  const pages = files.reduce((n, f) => n + (f.page_count || 0), 0);
+  return { buffer: out, name: `${baseName(files[0].name)}-merged.pdf`, pages };
+}));
+
+router.post('/split', exportTask(async (req) => {
+  const [file] = await loadOwned(req.user.id, [req.body.fileId]);
+  const total = file.page_count;
+  const groups = req.body.mode === 'each'
+    ? Array.from({ length: total }, (_, i) => [i])
+    : parseRanges(req.body.ranges, total);
+  const buffer = await readFile(req.user.id, file.storage_key);
+  const parts = await split(buffer, groups);
+  const base = baseName(file.name);
+  const label = (g) => (g.length === 1 ? `p${g[0] + 1}` : `p${g[0] + 1}-${g.at(-1) + 1}`);
+
+  if (parts.length === 1) {
+    return { buffer: Buffer.from(parts[0]), name: `${base}-${label(groups[0])}.pdf`, pages: groups[0].length };
+  }
+  const zip = new JSZip();
+  parts.forEach((bytes, i) => zip.file(`${base}-${label(groups[i])}.pdf`, bytes));
+  const out = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  return { buffer: out, name: `${base}-split.zip`, ext: 'zip' };
+}));
+
+router.post('/organize', exportTask(async (req) => {
+  const specs = Array.isArray(req.body.pages) ? req.body.pages : [];
+  if (!specs.length) throw Object.assign(new Error('Keep at least one page.'), { status: 400 });
+  if (specs.length > 2000) throw Object.assign(new Error('Too many pages.'), { status: 400 });
+  const ids = [...new Set(specs.map((p) => p.fileId))];
+  const files = await loadOwned(req.user.id, ids);
+  const buffers = await Promise.all(files.map((f) => readFile(req.user.id, f.storage_key)));
+  const normalized = specs.map((p) => ({
+    source: ids.indexOf(p.fileId),
+    page: Number(p.page),
+    rotate: [0, 90, 180, 270].includes(Number(p.rotate)) ? Number(p.rotate) : 0,
+  }));
+  const out = Buffer.from(await assemble(buffers, normalized));
+  return { buffer: out, name: `${baseName(files[0].name)}-organized.pdf`, pages: specs.length };
+}));
+
+export default router;
