@@ -53,6 +53,15 @@ app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ error: `Each file must be ${config.maxUploadMb} MB or smaller.` });
   }
+  // Database setup problems: say what's wrong (without exposing connection details).
+  if (err.code === '42P01') {
+    console.error(err);
+    return res.status(500).json({ error: 'Server setup problem: database tables are missing. Run "npm run db:migrate" against this DATABASE_URL.' });
+  }
+  if (['28P01', '3D000', 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(err.code)) {
+    console.error(err);
+    return res.status(503).json({ error: 'Server setup problem: cannot connect to the database. Check DATABASE_URL.' });
+  }
   const status = err.status || 500;
   if (status >= 500) console.error(err);
   res.status(status).json({ error: status >= 500 && !err.expose ? 'Something went wrong. Please try again.' : err.message });

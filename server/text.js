@@ -1,4 +1,3 @@
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { query } from './db.js';
 import { readFile } from './storage.js';
 
@@ -7,6 +6,8 @@ const MAX_PAGE_CHARS = 20_000;
 
 /** Extract plain text for each page (1-based page numbers). */
 async function extractPages(buffer) {
+  // Loaded on first use so the API can start even if the PDF engine is unavailable.
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const task = getDocument({ data: new Uint8Array(buffer), isEvalSupported: false, verbosity: 0 });
   const doc = await task.promise;
   try {

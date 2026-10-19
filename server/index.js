@@ -1,9 +1,12 @@
-import { config, billingMode } from './config.js';
-import { pool } from './db.js';
-import { storageMode } from './storage.js';
-import app from './app.js';
-
 // Standalone server for local development and hosts like Render/Railway.
+let modules;
+try {
+  modules = await Promise.all([import('./config.js'), import('./db.js'), import('./storage.js'), import('./app.js')]);
+} catch (err) {
+  console.error(err.isConfigError ? err.message : err);
+  process.exit(1);
+}
+const [{ config, billingMode }, { pool }, { storageMode }, { default: app }] = modules;
 
 // Verify the database is reachable and the schema exists before accepting traffic.
 try {

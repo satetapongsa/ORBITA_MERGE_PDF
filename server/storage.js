@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { put, get, del, issueSignedToken, presignUrl } from '@vercel/blob';
-import { config } from './config.js';
+import { config, ConfigError } from './config.js';
 
 // Two interchangeable backends:
 //  - "blob":  Vercel Blob (private access). Used when BLOB_READ_WRITE_TOKEN is set, e.g. on Vercel.
@@ -15,7 +15,7 @@ export const storageMode = process.env.BLOB_READ_WRITE_TOKEN ? 'blob' : 'local';
 
 // Vercel's filesystem is temporary, so local storage there would silently lose files.
 if (process.env.VERCEL && storageMode === 'local') {
-  throw new Error('BLOB_READ_WRITE_TOKEN is missing. Connect a Vercel Blob store to this project (Storage → Blob).');
+  throw new ConfigError('BLOB_READ_WRITE_TOKEN is missing. Connect a Vercel Blob store to this project (Storage → Blob).');
 }
 
 // Vercel functions cannot send response bodies larger than ~4.5 MB, so bigger files are

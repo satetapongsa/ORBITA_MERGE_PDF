@@ -4,21 +4,47 @@ import path from 'node:path';
 // no test billing and no default session secret.
 const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
 
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL is not set. Copy .env.example to .env and add your Neon connection string.');
-  process.exit(1);
+/** A setup problem that is safe to show to the site owner (names settings, never their values). */
+export class ConfigError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ConfigError';
+    this.isConfigError = true;
+  }
 }
-if (isProd && !process.env.JWT_SECRET) {
-  console.error('JWT_SECRET must be set in production.');
-  process.exit(1);
+
+/** Accept connection strings pasted with quotes or as a `psql '…'` command. */
+function cleanDatabaseUrl(raw) {
+  const value = String(raw || '').trim().replace(/^psql\s+/, '').replace(/^['"]|['"]$/g, '').trim();
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    if (!/^postgres(ql)?:$/.test(url.protocol)) throw new Error();
+  } catch {
+    throw new ConfigError('DATABASE_URL is not a valid postgresql:// connection string. Copy it again from the Neon console.');
+  }
+  return value;
+}
+
+const env = (name) => (process.env[name] || '').trim();
+
+const missing = [];
+const databaseUrl = cleanDatabaseUrl(process.env.DATABASE_URL);
+if (!databaseUrl) missing.push('DATABASE_URL');
+if (isProd) {
+  for (const name of ['JWT_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']) if (!env(name)) missing.push(name);
+  if (process.env.VERCEL && !env('BLOB_READ_WRITE_TOKEN')) missing.push('BLOB_READ_WRITE_TOKEN (connect a Blob store under Storage)');
+}
+if (missing.length) {
+  throw new ConfigError(`Missing environment variable${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Add ${missing.length > 1 ? 'them' : 'it'} in the hosting settings and redeploy.`);
 }
 
 export const config = {
   isProd,
   port: Number(process.env.PORT || 3001),
-  databaseUrl: process.env.DATABASE_URL,
-  jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
-  appUrl: (process.env.APP_URL || 'http://localhost:5173').replace(/\/+$/, ''),
+  databaseUrl,
+  jwtSecret: env('JWT_SECRET') || 'dev-only-secret-change-me',
+  appUrl: (env('APP_URL') || 'http://localhost:5173').replace(/\/+$/, ''),
   storageDir: path.resolve(process.env.STORAGE_DIR || './storage'),
   timezone: process.env.APP_TIMEZONE || 'Asia/Bangkok',
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB || 50),
@@ -29,21 +55,17 @@ export const config = {
   assistant: {
     // Public branding only — the underlying provider/model is never sent to the browser.
     name: process.env.ASSISTANT_NAME || 'PageSmith 5.5 Pro',
-    apiKey: process.env.DEEPSEEK_API_KEY || '',
+    apiKey: env('DEEPSEEK_API_KEY'),
     baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
     model: process.env.DEEPSEEK_MODEL || 'deepseek-flash',
     dailyLimit: Number(process.env.ASSISTANT_DAILY_LIMIT || 100),
   },
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY || '',
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
-    priceId: process.env.STRIPE_PRICE_ID || '',
+    secretKey: env('STRIPE_SECRET_KEY'),
+    webhookSecret: env('STRIPE_WEBHOOK_SECRET'),
+    priceId: env('STRIPE_PRICE_ID'),
   },
 };
 
-// Without Stripe keys the app runs in "mock billing" mode so it can be tried locally.
+// Without Stripe keys the app runs in "mock billing" mode so it can be tried locally (never in production).
 export const billingMode = config.stripe.secretKey ? 'stripe' : 'mock';
-if (billingMode === 'mock' && isProd) {
-  console.error('STRIPE_SECRET_KEY must be set in production (mock billing is dev-only).');
-  process.exit(1);
-}
