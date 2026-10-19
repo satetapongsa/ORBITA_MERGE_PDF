@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS files (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS files_user_idx ON files (user_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS files_storage_key_idx ON files (storage_key);
 -- Text indexing state for the assistant: NULL (not yet), ready, empty (no text layer), failed, skipped.
 ALTER TABLE files ADD COLUMN IF NOT EXISTS text_status TEXT;
 

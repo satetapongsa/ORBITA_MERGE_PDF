@@ -16,7 +16,7 @@ export const config = {
   port: Number(process.env.PORT || 3001),
   databaseUrl: process.env.DATABASE_URL,
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
-  appUrl: process.env.APP_URL || 'http://localhost:5173',
+  appUrl: (process.env.APP_URL || 'http://localhost:5173').replace(/\/+$/, ''),
   storageDir: path.resolve(process.env.STORAGE_DIR || './storage'),
   timezone: process.env.APP_TIMEZONE || 'Asia/Bangkok',
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB || 50),

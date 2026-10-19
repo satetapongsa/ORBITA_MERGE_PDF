@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api } from './api.js';
+import { api, resetStorageConfig } from './api.js';
 
 const AuthContext = createContext(null);
 
@@ -17,12 +17,14 @@ export function AuthProvider({ children }) {
 
   const signIn = useCallback(async (mode, fields) => {
     const d = await api(`/auth/${mode}`, { method: 'POST', body: fields });
+    resetStorageConfig();
     setUser(d.user);
     setAccount(d.account);
   }, []);
 
   const signOut = useCallback(async () => {
     await api('/auth/logout', { method: 'POST' }).catch(() => {});
+    resetStorageConfig();
     setUser(null);
     setAccount(null);
   }, []);

@@ -6,8 +6,7 @@ import { requireAuth } from '../auth.js';
 import { readFile, saveFile } from '../storage.js';
 import { merge, split, assemble, parseRanges } from '../pdf.js';
 import { getPlan, consumeExport, refundExport, getAccountSummary } from '../plans.js';
-import { getOwnedFile, toClient } from './files.js';
-import { indexFile } from '../text.js';
+import { getOwnedFile, toClient, indexInBackground } from './files.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -42,13 +41,14 @@ function exportTask(handler) {
     }
     try {
       const { buffer, name, ext = 'pdf', pages = null } = await handler(req);
-      const key = await saveFile(userId, buffer, ext);
+      const mime = ext === 'zip' ? 'application/zip' : 'application/pdf';
+      const key = await saveFile(userId, buffer, { name, contentType: mime });
       const row = await one(
         `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key)
          VALUES ($1, 'output', $2, $3, $4, $5, $6) RETURNING *`,
-        [userId, name, ext === 'zip' ? 'application/zip' : 'application/pdf', buffer.length, pages, key],
+        [userId, name, mime, buffer.length, pages, key],
       );
-      indexFile(row);
+      indexInBackground(row);
       res.status(201).json({ file: toClient(row), account: await getAccountSummary(userId) });
     } catch (err) {
       await refundExport(userId);
