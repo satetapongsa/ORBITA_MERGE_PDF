@@ -7,7 +7,7 @@ export function Brand({ to = '/' }) {
   return (
     <Link to={to} className="brand">
       <span className="brand-mark"><FileStack size={16} /></span>
-      PageSmith <small>/pdf</small>
+      PageSmith
     </Link>
   );
 }
