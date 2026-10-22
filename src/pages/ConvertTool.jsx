@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, FileText, Image as ImageIcon, FileCode, Minimize2, Check, X, Images, RotateCw, Trash2, GripVertical } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, FileText, Image as ImageIcon, FileCode, Minimize2, Check, X, Images, RotateCw, Trash2, GripVertical, Sparkles, TrendingDown, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
@@ -7,7 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import Dropzone from '../components/Dropzone.jsx';
 import PageThumb from '../components/PageThumb.jsx';
 import ExportPanel, { useExport } from '../components/ExportPanel.jsx';
-import { fileUrl, formatBytes } from '../api.js';
+import { api, fileUrl, formatBytes } from '../api.js';
 
 let seq = 0;
 
@@ -117,6 +117,8 @@ function SortableImageTile({ item, index, onRotate, onRemove }) {
 export default function ConvertTool() {
   const [activeMode, setActiveMode] = useState(MODES[0]);
   const [selectedItems, setSelectedItems] = useState([]); // [{ key, file, rotate }]
+  const [estimate, setEstimate] = useState(null);
+  const [estimating, setEstimating] = useState(false);
   const exporter = useExport(activeMode.endpoint);
 
   const sensors = useSensors(
@@ -127,8 +129,25 @@ export default function ConvertTool() {
   function handleModeChange(mode) {
     setActiveMode(mode);
     setSelectedItems([]);
+    setEstimate(null);
     exporter.reset();
   }
+
+  // Calculate compression estimate whenever a file is selected in compress mode
+  useEffect(() => {
+    if (activeMode.id === 'compress' && selectedItems.length > 0) {
+      setEstimating(true);
+      api('/tools/compress/estimate', {
+        method: 'POST',
+        body: { fileId: selectedItems[0].file.id },
+      })
+        .then((data) => setEstimate(data))
+        .catch(() => setEstimate(null))
+        .finally(() => setEstimating(false));
+    } else {
+      setEstimate(null);
+    }
+  }, [activeMode.id, selectedItems]);
 
   function handleFiles(files) {
     const newItems = files.map((f) => ({
@@ -312,9 +331,46 @@ export default function ConvertTool() {
               <span className="mono">{selectedItems.length} รายการ</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="muted">ขนาดรวม:</span>
+              <span className="muted">ขนาดต้นฉบับ:</span>
               <span className="mono">{formatBytes(selectedItems.reduce((sum, it) => sum + it.file.size, 0))}</span>
             </div>
+
+            {/* Real-time compression calculation info */}
+            {activeMode.id === 'compress' && selectedItems.length > 0 && (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  borderRadius: 8,
+                  background: 'var(--surface-hover)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, marginBottom: 8, color: 'var(--accent)' }}>
+                  <TrendingDown size={16} /> การคำนวณการบีบอัดไฟล์
+                </div>
+                {estimating ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)', fontSize: '0.85rem' }}>
+                    <Loader2 size={14} className="spin" /> กำลังคำนวณขนาดที่ลดได้...
+                  </div>
+                ) : estimate ? (
+                  <div className="stack" style={{ gap: 6, fontSize: '0.88rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span className="muted">ขนาดหลังบีบอัด:</span>
+                      <b style={{ color: 'var(--accent)' }} className="mono">{formatBytes(estimate.compressedSize)}</b>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span className="muted">ลดขนาดลงได้:</span>
+                      <span className="badge badge-pro mono" style={{ fontSize: '0.75rem' }}>
+                        ลดได้ {estimate.ratio}% (~{formatBytes(estimate.savedBytes)})
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="small muted">พร้อมบีบอัดเพื่อลดขนาดและจัดเรียงสตรีมใหม่</div>
+                )}
+              </div>
+            )}
           </div>
         </ExportPanel>
       </div>

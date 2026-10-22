@@ -169,12 +169,34 @@ router.post('/convert/pdf-to-images', exportTask(async (req) => {
   return res;
 }));
 
+// Compression: Estimate compression size
+router.post('/compress/estimate', async (req, res) => {
+  try {
+    const [file] = await loadOwned(req.user.id, [req.body.fileId], ['application/pdf']);
+    const buffer = await readFile(req.user.id, file.storage_key);
+    const result = await compressPdf(buffer, req.body.level || 'recommended');
+    res.json({
+      originalSize: result.originalSize,
+      compressedSize: result.compressedSize,
+      savedBytes: result.savedBytes,
+      ratio: result.ratio,
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // Compression: Compress PDF
 router.post('/compress', exportTask(async (req) => {
   const [file] = await loadOwned(req.user.id, [req.body.fileId], ['application/pdf']);
   const buffer = await readFile(req.user.id, file.storage_key);
-  const out = await compressPdf(buffer);
-  return { buffer: out, name: `${baseName(file.name)}-compressed.pdf`, ext: 'pdf', pages: file.page_count };
+  const result = await compressPdf(buffer, req.body.level || 'recommended');
+  return {
+    buffer: result.buffer,
+    name: `${baseName(file.name)}-compressed.pdf`,
+    ext: 'pdf',
+    pages: file.page_count,
+  };
 }));
 
 export default router;

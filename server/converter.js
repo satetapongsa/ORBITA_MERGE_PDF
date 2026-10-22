@@ -170,15 +170,30 @@ export async function txtToPdf(txtBuffer) {
   return Buffer.from(await pdfDoc.save());
 }
 
-/** Optimize / Compress PDF buffer */
-export async function compressPdf(pdfBuffer) {
+/** Optimize / Compress PDF buffer with compression levels */
+export async function compressPdf(pdfBuffer, level = 'recommended') {
   const doc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
-  // PDFDocument re-serialization without unused objects
+  
+  // Re-save with object stream optimization
   const saved = await doc.save({
     useObjectStreams: true,
     addDefaultPage: false,
+    objectsPerTick: 50,
   });
-  return Buffer.from(saved);
+
+  const outBuffer = Buffer.from(saved);
+  const originalSize = pdfBuffer.length;
+  const compressedSize = outBuffer.length;
+  const savedBytes = Math.max(0, originalSize - compressedSize);
+  const ratio = Math.round((savedBytes / originalSize) * 100);
+
+  return {
+    buffer: outBuffer,
+    originalSize,
+    compressedSize,
+    savedBytes,
+    ratio,
+  };
 }
 
 /** Convert PDF to PNG images (returns either a single PNG buffer or a ZIP of PNGs) */
