@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { ArrowLeft, FileText, Image as ImageIcon, FileCode, Minimize2, Check, RefreshCw, X, Images } from 'lucide-react';
+import { ArrowLeft, FileText, Image as ImageIcon, FileCode, Minimize2, Check, X, Images, RotateCw, Trash2, GripVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import Dropzone from '../components/Dropzone.jsx';
+import PageThumb from '../components/PageThumb.jsx';
 import ExportPanel, { useExport } from '../components/ExportPanel.jsx';
-import { formatBytes } from '../api.js';
+import { fileUrl, formatBytes } from '../api.js';
+
+let seq = 0;
 
 const MODES = [
   {
     id: 'images-to-pdf',
     title: 'รูปภาพ เป็น PDF',
-    desc: 'รวมภาพ JPG, PNG หรือ WebP หลายๆ รูปเข้าเป็นเอกสาร PDF ฉบับเดียว',
+    desc: 'รวมภาพ JPG, PNG, WebP กี่ไฟล์ก็ได้ ลากเรียงหน้า หมุนรูปภาพ แล้วรวมเป็น PDF ฉบับเดียว',
     accept: 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp',
     label: 'ไฟล์รูปภาพ (JPG, PNG, WebP)',
     multiple: true,
-    action: 'แปลงเป็นเอกสาร PDF',
+    canReorder: true,
+    action: 'รวมและแปลงเป็น PDF',
     endpoint: 'convert/images-to-pdf',
     icon: ImageIcon,
   },
@@ -24,6 +31,7 @@ const MODES = [
     accept: 'application/pdf,.pdf',
     label: 'เอกสาร PDF',
     multiple: false,
+    canReorder: false,
     action: 'แปลงเป็นภาพ PNG',
     endpoint: 'convert/pdf-to-images',
     icon: Images,
@@ -35,6 +43,7 @@ const MODES = [
     accept: 'application/pdf,.pdf',
     label: 'เอกสาร PDF',
     multiple: false,
+    canReorder: false,
     action: 'แปลงเป็นไฟล์ Word (.docx)',
     endpoint: 'convert/pdf-to-docx',
     icon: FileText,
@@ -46,6 +55,7 @@ const MODES = [
     accept: 'application/pdf,.pdf',
     label: 'เอกสาร PDF',
     multiple: false,
+    canReorder: false,
     action: 'แปลงเป็นข้อความ (.txt)',
     endpoint: 'convert/pdf-to-txt',
     icon: FileCode,
@@ -57,6 +67,7 @@ const MODES = [
     accept: 'text/plain,.txt',
     label: 'ไฟล์ข้อความ (.txt)',
     multiple: false,
+    canReorder: false,
     action: 'แปลงเป็นเอกสาร PDF',
     endpoint: 'convert/txt-to-pdf',
     icon: FileText,
@@ -68,51 +79,113 @@ const MODES = [
     accept: 'application/pdf,.pdf',
     label: 'เอกสาร PDF',
     multiple: false,
+    canReorder: false,
     action: 'บีบอัดลดขนาด PDF',
     endpoint: 'compress',
     icon: Minimize2,
   },
 ];
 
+function SortableImageTile({ item, index, onRotate, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.key });
+  const stop = (e) => e.stopPropagation();
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`page-tile ${isDragging ? 'dragging' : ''}`}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      {...attributes}
+      {...listeners}
+      aria-label={`Page ${index + 1}`}
+    >
+      <PageThumb fileId={`img:${fileUrl(item.file.id)}`} width={120} rotate={item.rotate} />
+      <div className="tools" onPointerDown={stop} onKeyDown={stop}>
+        <button onClick={() => onRotate(item.key)} title="หมุนภาพ 90°" aria-label="Rotate"><RotateCw size={14} /></button>
+        <button className="del" onClick={() => onRemove(item.key)} title="ลบภาพนี้" aria-label="Remove"><Trash2 size={14} /></button>
+      </div>
+      <div className="label">
+        <span><b>{String(index + 1).padStart(2, '0')}</b></span>
+        <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.file.name}>
+          {item.file.name}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function ConvertTool() {
   const [activeMode, setActiveMode] = useState(MODES[0]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]); // [{ key, file, rotate }]
   const exporter = useExport(activeMode.endpoint);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   function handleModeChange(mode) {
     setActiveMode(mode);
-    setSelectedFiles([]);
+    setSelectedItems([]);
     exporter.reset();
   }
 
   function handleFiles(files) {
+    const newItems = files.map((f) => ({
+      key: `img_${++seq}`,
+      file: f,
+      rotate: 0,
+    }));
     if (activeMode.multiple) {
-      setSelectedFiles((cur) => [...cur, ...files]);
+      setSelectedItems((cur) => [...cur, ...newItems]);
     } else {
-      setSelectedFiles(files.slice(0, 1));
+      setSelectedItems(newItems.slice(0, 1));
     }
   }
 
-  function removeFile(index) {
-    setSelectedFiles((cur) => cur.filter((_, i) => i !== index));
+  function removeTile(key) {
+    setSelectedItems((cur) => cur.filter((it) => it.key !== key));
+  }
+
+  function rotateTile(key) {
+    setSelectedItems((cur) =>
+      cur.map((it) => (it.key === key ? { ...it, rotate: (it.rotate + 90) % 360 } : it))
+    );
+  }
+
+  function handleDragEnd({ active, over }) {
+    if (!over || active.id === over.id) return;
+    setSelectedItems((cur) => {
+      const from = cur.findIndex((i) => i.key === active.id);
+      const to = cur.findIndex((i) => i.key === over.id);
+      return arrayMove(cur, from, to);
+    });
   }
 
   function handleRun() {
-    if (activeMode.multiple) {
-      exporter.run({ fileIds: selectedFiles.map((f) => f.id) });
+    if (activeMode.id === 'images-to-pdf') {
+      exporter.run({
+        items: selectedItems.map((it) => ({
+          fileId: it.file.id,
+          rotate: it.rotate,
+        })),
+      });
+    } else if (activeMode.multiple) {
+      exporter.run({ fileIds: selectedItems.map((it) => it.file.id) });
     } else {
-      exporter.run({ fileId: selectedFiles[0]?.id });
+      exporter.run({ fileId: selectedItems[0]?.file.id });
     }
   }
 
   const CurrentIcon = activeMode.icon;
+  const isSortable = activeMode.canReorder && selectedItems.length > 0;
 
   return (
     <div className="tool-page">
       <div className="tool-head">
         <Link to="/" className="back-link"><ArrowLeft size={16} /> ย้อนกลับไปหน้าเครื่องมือ</Link>
-        <h1>ระบบแปลงและย่อขนาดไฟล์อัจฉริยะ (Smart Converter)</h1>
-        <p className="muted">แปลงไฟล์รูปภาพ, เอกสาร Word, ข้อความ Text และบีบอัดไฟล์ PDF ได้ง่ายๆ ในที่เดียว</p>
+        <h1>ระบบแปลง เรียงหน้า และย่อขนาดไฟล์อัจฉริยะ</h1>
+        <p className="muted">เลือกประเภทต้นฉบับ อัปโหลดกี่ไฟล์ก็ได้ ลากเรียงหน้า หมุนภาพ และส่งออกได้ทันที</p>
       </div>
 
       {/* Mode selection tabs */}
@@ -164,44 +237,68 @@ export default function ConvertTool() {
               accept={activeMode.accept}
               fileTypeLabel={activeMode.label}
               title={`ลากวาง ${activeMode.label} ที่นี่`}
-              subtitle={activeMode.multiple ? 'หรือคลิกเพื่อเลือกหลายไฟล์จากเครื่องของคุณ' : 'หรือคลิกเพื่อเลือกไฟล์จากเครื่องของคุณ'}
+              subtitle={activeMode.multiple ? 'หรือคลิกเพื่อเลือกไฟล์ (เลือกได้กี่ไฟล์ก็ได้)' : 'หรือคลิกเพื่อเลือกไฟล์จากเครื่องของคุณ'}
             />
           </div>
 
-          {selectedFiles.length > 0 && (
+          {selectedItems.length > 0 && (
             <div className="card" style={{ padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontWeight: 600 }}>ไฟล์ที่เลือกไว้ ({selectedFiles.length})</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFiles([])}>ล้างทั้งหมด</button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                  <span style={{ fontWeight: 600 }}>ไฟล์ที่เลือกไว้ ({selectedItems.length})</span>
+                  {activeMode.canReorder && (
+                    <span className="small muted" style={{ marginLeft: 8 }}>(ลากสลับตำแหน่งเพื่อเรียงหน้า หรือกดหมุนภาพได้)</span>
+                  )}
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedItems([])}>ล้างทั้งหมด</button>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {selectedFiles.map((file, idx) => (
-                  <div
-                    key={file.id + idx}
-                    className="file-row"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                      <span className="mono small muted">{String(idx + 1).padStart(2, '0')}</span>
-                      <div className="meta" style={{ minWidth: 0 }}>
-                        <div className="name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
-                        <div className="mono small muted">{formatBytes(file.size)}</div>
-                      </div>
+
+              {isSortable ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={selectedItems.map((i) => i.key)} strategy={rectSortingStrategy}>
+                    <div className="page-grid">
+                      {selectedItems.map((item, idx) => (
+                        <SortableImageTile
+                          key={item.key}
+                          item={item}
+                          index={idx}
+                          onRotate={rotateTile}
+                          onRemove={removeTile}
+                        />
+                      ))}
                     </div>
-                    <button className="btn btn-ghost btn-icon" onClick={() => removeFile(idx)} aria-label="ลบไฟล์นี้">
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {selectedItems.map((item, idx) => (
+                    <div
+                      key={item.key}
+                      className="file-row"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        <span className="mono small muted">{String(idx + 1).padStart(2, '0')}</span>
+                        <div className="meta" style={{ minWidth: 0 }}>
+                          <div className="name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.file.name}</div>
+                          <div className="mono small muted">{formatBytes(item.file.size)}</div>
+                        </div>
+                      </div>
+                      <button className="btn btn-ghost btn-icon" onClick={() => removeTile(item.key)} aria-label="ลบไฟล์นี้">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <ExportPanel
-          title="รายละเอียดการแปลงไฟล์"
+          title="รายละเอียดการส่งออก"
           actionLabel={activeMode.action}
-          disabled={selectedFiles.length === 0}
+          disabled={selectedItems.length === 0}
           onExport={handleRun}
           exporter={exporter}
         >
@@ -211,12 +308,12 @@ export default function ConvertTool() {
               <b>{activeMode.title}</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="muted">จำนวนไฟล์:</span>
-              <span className="mono">{selectedFiles.length} ไฟล์</span>
+              <span className="muted">จำนวนไฟล์/หน้า:</span>
+              <span className="mono">{selectedItems.length} รายการ</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span className="muted">ขนาดรวม:</span>
-              <span className="mono">{formatBytes(selectedFiles.reduce((sum, f) => sum + f.size, 0))}</span>
+              <span className="mono">{formatBytes(selectedItems.reduce((sum, it) => sum + it.file.size, 0))}</span>
             </div>
           </div>
         </ExportPanel>

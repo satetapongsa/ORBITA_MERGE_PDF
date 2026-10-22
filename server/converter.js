@@ -1,13 +1,16 @@
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import sharp from 'sharp';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import JSZip from 'jszip';
 
-/** Convert Image buffer (JPG, PNG, WebP) into PDF bytes */
-export async function imagesToPdf(imageBuffers) {
+/** Convert Image buffer (JPG, PNG, WebP) into PDF bytes with optional rotation */
+export async function imagesToPdf(imageItems) {
   const pdfDoc = await PDFDocument.create();
 
-  for (const buf of imageBuffers) {
+  for (const item of imageItems) {
+    const buf = Buffer.isBuffer(item) ? item : item.buffer;
+    const rotate = item?.rotate || 0;
+
     // Standardize to JPEG or PNG via sharp
     const metadata = await sharp(buf).metadata();
     let img;
@@ -21,6 +24,9 @@ export async function imagesToPdf(imageBuffers) {
 
     const { width, height } = img.scale(1);
     const page = pdfDoc.addPage([width, height]);
+    if (rotate) {
+      page.setRotation(degrees(rotate % 360));
+    }
     page.drawImage(img, {
       x: 0,
       y: 0,

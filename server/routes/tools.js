@@ -111,14 +111,30 @@ router.post('/organize', exportTask(async (req) => {
   return { buffer: out, name: `${baseName(files[0].name)}-organized.pdf`, pages: specs.length };
 }));
 
-// Conversion: Images -> PDF
+// Conversion: Images -> PDF (supports reordered items with rotation)
 router.post('/convert/images-to-pdf', exportTask(async (req) => {
-  const ids = Array.isArray(req.body.fileIds) ? req.body.fileIds : [];
-  if (!ids.length) throw Object.assign(new Error('Choose at least one image file.'), { status: 400 });
-  const files = await loadOwned(req.user.id, ids, ['image/jpeg', 'image/png', 'image/webp']);
-  const buffers = await Promise.all(files.map((f) => readFile(req.user.id, f.storage_key)));
-  const out = await imagesToPdf(buffers);
-  return { buffer: out, name: `${baseName(files[0].name)}-converted.pdf`, ext: 'pdf', pages: files.length };
+  let items = req.body.items; // [{ fileId, rotate }]
+  if (!items && Array.isArray(req.body.fileIds)) {
+    items = req.body.fileIds.map((id) => ({ fileId: id, rotate: 0 }));
+  }
+  if (!items || !items.length) throw Object.assign(new Error('Choose at least one image file.'), { status: 400 });
+
+  const uniqueIds = [...new Set(items.map((it) => it.fileId))];
+  const files = await loadOwned(req.user.id, uniqueIds, ['image/jpeg', 'image/png', 'image/webp']);
+  const fileMap = new Map(files.map((f) => [f.id, f]));
+
+  const imageItems = await Promise.all(
+    items.map(async (it) => {
+      const f = fileMap.get(it.fileId);
+      if (!f) throw Object.assign(new Error('Image file not found.'), { status: 404 });
+      const buffer = await readFile(req.user.id, f.storage_key);
+      return { buffer, rotate: Number(it.rotate) || 0 };
+    })
+  );
+
+  const out = await imagesToPdf(imageItems);
+  const firstName = fileMap.get(items[0].fileId)?.name || 'document';
+  return { buffer: out, name: `${baseName(firstName)}-converted.pdf`, ext: 'pdf', pages: items.length };
 }));
 
 // Conversion: PDF -> Word (.docx)

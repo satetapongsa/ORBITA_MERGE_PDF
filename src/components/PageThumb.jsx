@@ -17,6 +17,10 @@ export default function PageThumb({ fileId, page = 0, width = 160, rotate = 0, c
 
   useEffect(() => {
     if (!visible) return;
+    if (fileId?.startsWith('img:')) {
+      setReady(true);
+      return;
+    }
     let cancelled = false;
     renderPage(fileId, page, canvas.current, width)
       .then(() => !cancelled && setReady(true))
@@ -25,13 +29,30 @@ export default function PageThumb({ fileId, page = 0, width = 160, rotate = 0, c
   }, [visible, fileId, page, width]);
 
   const sideways = rotate % 180 !== 0;
+  const isImage = fileId?.startsWith('img:');
+  const imageUrl = isImage ? fileId.slice(4) : null;
+
   return (
     <div ref={wrap} className={`thumb ${className}`}>
       {!ready && <div className="skeleton" />}
-      <canvas
-        ref={canvas}
-        style={{ transform: `rotate(${rotate}deg)${sideways ? ' scale(0.707)' : ''}` }}
-      />
+      {isImage ? (
+        <img
+          src={imageUrl}
+          alt={`Page ${page + 1}`}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            transform: `rotate(${rotate}deg)${sideways ? ' scale(0.707)' : ''}`,
+          }}
+          onLoad={() => setReady(true)}
+        />
+      ) : (
+        <canvas
+          ref={canvas}
+          style={{ transform: `rotate(${rotate}deg)${sideways ? ' scale(0.707)' : ''}` }}
+        />
+      )}
     </div>
   );
 }
