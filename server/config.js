@@ -31,10 +31,8 @@ const env = (name) => (process.env[name] || '').trim();
 const missing = [];
 const databaseUrl = cleanDatabaseUrl(process.env.DATABASE_URL);
 if (!databaseUrl) missing.push('DATABASE_URL');
-if (isProd) {
-  for (const name of ['JWT_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']) if (!env(name)) missing.push(name);
-  if (process.env.VERCEL && !env('BLOB_READ_WRITE_TOKEN')) missing.push('BLOB_READ_WRITE_TOKEN (connect a Blob store under Storage)');
-}
+if (!env('JWT_SECRET')) missing.push('JWT_SECRET');
+
 if (missing.length) {
   throw new ConfigError(`Missing environment variable${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Add ${missing.length > 1 ? 'them' : 'it'} in the hosting settings and redeploy.`);
 }

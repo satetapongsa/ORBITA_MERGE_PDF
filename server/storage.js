@@ -13,9 +13,9 @@ import { config, ConfigError } from './config.js';
 
 export const storageMode = process.env.BLOB_READ_WRITE_TOKEN ? 'blob' : 'local';
 
-// Vercel's filesystem is temporary, so local storage there would silently lose files.
-if (process.env.VERCEL && storageMode === 'local') {
-  throw new ConfigError('BLOB_READ_WRITE_TOKEN is missing. Connect a Vercel Blob store to this project (Storage → Blob).');
+// In serverless environments without Blob store, use /tmp for temporary storage
+if (process.env.VERCEL && storageMode === 'local' && !process.env.STORAGE_DIR) {
+  config.storageDir = '/tmp/storage';
 }
 
 // Vercel functions cannot send response bodies larger than ~4.5 MB, so bigger files are
