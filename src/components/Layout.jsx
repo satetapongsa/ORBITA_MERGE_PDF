@@ -64,7 +64,6 @@ export default function Layout() {
             <NavLink to="/convert"><RefreshCw size={16} /><span>แปลงและย่อไฟล์</span></NavLink>
             <NavLink to="/files"><FolderOpen size={16} /><span>ไฟล์ของฉัน</span></NavLink>
             <NavLink to="/assistant"><Sparkles size={16} /><span>AI ผู้ช่วย</span><span className="pro-tag">PRO</span></NavLink>
-            <NavLink to="/account"><UserRound size={16} /><span>บัญชีผู้ใช้</span></NavLink>
           </nav>
           <div className="topbar-right">
             {account && <UsagePill account={account} />}
