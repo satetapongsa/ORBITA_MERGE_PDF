@@ -47,8 +47,19 @@ export async function uploadFiles(fileList, onProgress) {
   if (!accepted.length) throw new ApiError(rejected[0]?.error || 'No files to upload', 413, { rejected });
 
   if (cfg.mode !== 'blob') {
-    const res = await uploadViaServer(accepted, onProgress);
-    return { ...res, rejected: [...rejected, ...(res.rejected || [])] };
+    const saved = [];
+    const rej = [...rejected];
+    for (const f of accepted) {
+      try {
+        const res = await uploadViaServer([f], onProgress);
+        if (res.files?.length) saved.push(...res.files);
+        if (res.rejected?.length) rej.push(...res.rejected);
+      } catch (err) {
+        rej.push({ name: f.name, error: err.message || 'ไฟล์มีขนาดใหญ่เกินไป' });
+      }
+    }
+    if (!saved.length) throw new ApiError(rej[0]?.error || 'อัปโหลดไม่สำเร็จ', 413, { rejected: rej });
+    return { files: saved, rejected: rej };
   }
 
   const { upload } = await import('@vercel/blob/client');
