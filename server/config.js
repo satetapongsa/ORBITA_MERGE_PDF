@@ -45,7 +45,7 @@ export const config = {
   appUrl: (env('APP_URL') || 'http://localhost:5173').replace(/\/+$/, ''),
   storageDir: path.resolve(process.env.STORAGE_DIR || './storage'),
   timezone: process.env.APP_TIMEZONE || 'Asia/Bangkok',
-  maxUploadMb: Number(process.env.MAX_UPLOAD_MB || 50),
+  maxUploadMb: Number(process.env.MAX_UPLOAD_MB || 500),
   plans: {
     free: { id: 'free', name: 'Free', priceThb: 0, dailyLimit: 5 },
     pro: { id: 'pro', name: 'Pro', priceThb: 20, dailyLimit: 20 },

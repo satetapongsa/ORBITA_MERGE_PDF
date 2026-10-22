@@ -60,8 +60,8 @@ function blobFileName(name) {
 export async function uploadFiles(fileList, onProgress) {
   const files = [...fileList];
   const cfg = await getStorageConfig();
-  const maxBytes = cfg.maxUploadMb * 1024 * 1024;
-  const rejected = files.filter((f) => f.size > maxBytes).map((f) => ({ name: f.name, error: `Larger than ${cfg.maxUploadMb} MB.` }));
+  const maxBytes = (cfg.maxUploadMb || 500) * 1024 * 1024;
+  const rejected = files.filter((f) => f.size > maxBytes).map((f) => ({ name: f.name, error: `Larger than ${cfg.maxUploadMb || 500} MB.` }));
   const accepted = files.filter((f) => f.size <= maxBytes);
   if (!accepted.length) throw new ApiError(rejected[0]?.error || 'No files to upload', 413, { rejected });
 
