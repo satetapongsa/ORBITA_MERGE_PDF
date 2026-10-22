@@ -63,8 +63,8 @@ app.use((err, req, res, next) => {
     return res.status(503).json({ error: 'Server setup problem: cannot connect to the database. Check DATABASE_URL.' });
   }
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: status >= 500 && !err.expose ? 'Something went wrong. Please try again.' : err.message });
+  if (status >= 500) console.error('Server error:', err);
+  res.status(status).json({ error: err.message || 'Something went wrong. Please try again.' });
 });
 
 export default app;
