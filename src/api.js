@@ -89,10 +89,14 @@ function uploadViaServer(fileList, onProgress) {
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(e.loaded / e.total);
     xhr.onload = () => {
       const data = xhr.response || {};
-      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
-      else reject(new ApiError(data.error || 'Upload failed', xhr.status, data));
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(data);
+      } else {
+        const msg = data.error || (xhr.status === 413 ? 'ไฟล์มีขนาดใหญ่เกินขีดจำกัดของเซิร์ฟเวอร์' : `อัปโหลดไม่สำเร็จ (สถานะ: ${xhr.status})`);
+        reject(new ApiError(msg, xhr.status, data));
+      }
     };
-    xhr.onerror = () => reject(new ApiError('Network error during upload', 0));
+    xhr.onerror = () => reject(new ApiError('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่ายขณะอัปโหลด', 0));
     xhr.send(form);
   });
 }

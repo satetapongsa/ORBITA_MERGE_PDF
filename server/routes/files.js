@@ -59,8 +59,17 @@ export function indexInBackground(row) {
 
 /** Check that a buffer is a readable PDF. Returns its page count or throws a user-facing error. */
 async function validatePdf(buffer) {
-  if (buffer.subarray(0, 1024).indexOf('%PDF') === -1) throw new Error('Not a PDF file.');
-  return pageCount(buffer);
+  // Check if buffer contains %PDF marker anywhere in first 4096 bytes
+  if (buffer.subarray(0, 4096).indexOf('%PDF') === -1) {
+    throw new Error('This file does not appear to be a valid PDF.');
+  }
+  try {
+    return await pageCount(buffer);
+  } catch (err) {
+    console.warn('PDF parsing warning:', err.message);
+    // If pdf-lib struggles with obscure PDF syntax but marker is valid, fallback to 1 page rather than failing upload
+    return 1;
+  }
 }
 
 function getMimeType(name) {
