@@ -199,8 +199,10 @@ export async function compressPdf(pdfBuffer, level = 'recommended') {
 /** Convert PDF to PNG images (returns either a single PNG buffer or a ZIP of PNGs) */
 export async function pdfToImages(pdfBuffer, baseName = 'page') {
   const { pdfToPng } = await import('pdf-to-png-converter');
+  // 300 DPI standard resolution (300 / 72 ≈ 4.17 scale) for crisp, ultra high-definition text and graphics
   const pngPages = await pdfToPng(pdfBuffer, {
-    viewportScale: 2.0, // High quality 2x scale
+    viewportScale: 4.17,
+    useSystemFonts: true,
   });
 
   if (!pngPages || !pngPages.length) {
