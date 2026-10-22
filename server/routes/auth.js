@@ -70,6 +70,33 @@ router.get('/me', requireAuth, async (req, res) => {
   res.json({ user: req.user, account: await getAccountSummary(req.user.id) });
 });
 
+router.put('/profile', requireAuth, authLimiter, async (req, res) => {
+  const username = String(req.body.username ?? '').trim();
+  const email = String(req.body.email ?? '').trim().toLowerCase() || null;
+
+  if (!USERNAME_RE.test(username)) {
+    return res.status(400).json({ error: 'Username must be 3–32 characters: letters, numbers, dot, dash or underscore.' });
+  }
+  if (email && !EMAIL_RE.test(email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+
+  try {
+    const updated = await one(
+      `UPDATE users
+       SET username = $1, email = $2
+       WHERE id = $3
+       RETURNING id, username, email, created_at`,
+      [username, email, req.user.id]
+    );
+    res.json({ user: updated });
+  } catch (err) {
+    if (err.code === '23505') {
+      const field = err.constraint?.includes('email') ? 'email' : 'username';
+      return res.status(409).json({ error: `That ${field} is already in use by another account.` });
+    }
+    throw err;
+  }
+});
+
 router.post('/password', requireAuth, authLimiter, async (req, res) => {
   const current = String(req.body.currentPassword ?? '');
   const next = String(req.body.newPassword ?? '');
