@@ -74,10 +74,12 @@ export async function uploadFiles(fileList, onProgress) {
         if (res.files?.length) saved.push(...res.files);
         if (res.rejected?.length) rej.push(...res.rejected);
       } catch (err) {
-        rej.push({ name: f.name, error: err.message || 'ไฟล์มีขนาดใหญ่เกินไป' });
+        rej.push({ name: f.name, error: err.message || 'ไฟล์มีขนาดใหญ่เกินขีดจำกัดของเซิร์ฟเวอร์' });
       }
     }
-    if (!saved.length) throw new ApiError(rej[0]?.error || 'อัปโหลดไม่สำเร็จ', 413, { rejected: rej });
+    if (!saved.length && rej.length) {
+      throw new ApiError(rej.map((r) => `${r.name}: ${r.error}`).join('; '), 413, { rejected: rej });
+    }
     return { files: saved, rejected: rej };
   }
 
