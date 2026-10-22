@@ -47,7 +47,7 @@ export function newBlobKey(userId, name) {
 
 function localPath(userId, key) {
   assertUser(userId);
-  if (!/^[0-9a-f]{32}\.(pdf|zip)$/.test(key)) throw new Error('Invalid storage key');
+  if (!/^[0-9a-f]{32}\.(pdf|zip|docx|txt|png|jpg|jpeg)$/i.test(key)) throw new Error('Invalid storage key');
   return path.join(config.storageDir, userId, key);
 }
 
@@ -70,7 +70,11 @@ export async function saveFile(userId, buffer, { name, contentType = 'applicatio
   }
   const dir = path.join(config.storageDir, userId);
   await fs.mkdir(dir, { recursive: true });
-  const ext = contentType === 'application/zip' ? 'zip' : 'pdf';
+  const extMatch = name?.match(/\.([a-z0-9]+)$/i);
+  let ext = extMatch ? extMatch[1].toLowerCase() : 'pdf';
+  if (contentType === 'application/zip') ext = 'zip';
+  if (contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') ext = 'docx';
+  if (contentType === 'text/plain') ext = 'txt';
   const key = `${crypto.randomBytes(16).toString('hex')}.${ext}`;
   await fs.writeFile(path.join(dir, key), buffer);
   return key;

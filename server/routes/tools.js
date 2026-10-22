@@ -5,18 +5,19 @@ import { one } from '../db.js';
 import { requireAuth } from '../auth.js';
 import { readFile, saveFile } from '../storage.js';
 import { merge, split, assemble, parseRanges } from '../pdf.js';
+import { imagesToPdf, pdfToDocx, pdfToTxt, txtToPdf, compressPdf } from '../converter.js';
 import { getPlan, consumeExport, refundExport, getAccountSummary } from '../plans.js';
 import { getOwnedFile, toClient, indexInBackground } from './files.js';
 
 const router = Router();
 router.use(requireAuth);
 
-const baseName = (name) => name.replace(/\.pdf$/i, '');
+const baseName = (name) => name.replace(/\.[a-z0-9]+$/i, '');
 
-async function loadOwned(userId, ids) {
+async function loadOwned(userId, ids, allowedMimes = ['application/pdf']) {
   const files = await Promise.all(ids.map((id) => getOwnedFile(userId, id)));
-  if (files.some((f) => !f || f.mime !== 'application/pdf')) {
-    throw Object.assign(new Error('One of the selected files is no longer available.'), { status: 404 });
+  if (files.some((f) => !f || (allowedMimes.length && !allowedMimes.includes(f.mime)))) {
+    throw Object.assign(new Error('One of the selected files is no longer available or format is unsupported.'), { status: 404 });
   }
   return files;
 }
@@ -41,7 +42,13 @@ function exportTask(handler) {
     }
     try {
       const { buffer, name, ext = 'pdf', pages = null } = await handler(req);
-      const mime = ext === 'zip' ? 'application/zip' : 'application/pdf';
+      let mime = 'application/pdf';
+      if (ext === 'zip') mime = 'application/zip';
+      else if (ext === 'docx') mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (ext === 'txt') mime = 'text/plain';
+      else if (ext === 'png') mime = 'image/png';
+      else if (ext === 'jpg') mime = 'image/jpeg';
+
       const key = await saveFile(userId, buffer, { name, contentType: mime });
       const row = await one(
         `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key)
@@ -102,6 +109,48 @@ router.post('/organize', exportTask(async (req) => {
   }));
   const out = Buffer.from(await assemble(buffers, normalized));
   return { buffer: out, name: `${baseName(files[0].name)}-organized.pdf`, pages: specs.length };
+}));
+
+// Conversion: Images -> PDF
+router.post('/convert/images-to-pdf', exportTask(async (req) => {
+  const ids = Array.isArray(req.body.fileIds) ? req.body.fileIds : [];
+  if (!ids.length) throw Object.assign(new Error('Choose at least one image file.'), { status: 400 });
+  const files = await loadOwned(req.user.id, ids, ['image/jpeg', 'image/png', 'image/webp']);
+  const buffers = await Promise.all(files.map((f) => readFile(req.user.id, f.storage_key)));
+  const out = await imagesToPdf(buffers);
+  return { buffer: out, name: `${baseName(files[0].name)}-converted.pdf`, ext: 'pdf', pages: files.length };
+}));
+
+// Conversion: PDF -> Word (.docx)
+router.post('/convert/pdf-to-docx', exportTask(async (req) => {
+  const [file] = await loadOwned(req.user.id, [req.body.fileId], ['application/pdf']);
+  const buffer = await readFile(req.user.id, file.storage_key);
+  const out = await pdfToDocx(buffer);
+  return { buffer: out, name: `${baseName(file.name)}.docx`, ext: 'docx' };
+}));
+
+// Conversion: PDF -> Plain Text (.txt)
+router.post('/convert/pdf-to-txt', exportTask(async (req) => {
+  const [file] = await loadOwned(req.user.id, [req.body.fileId], ['application/pdf']);
+  const buffer = await readFile(req.user.id, file.storage_key);
+  const out = await pdfToTxt(buffer);
+  return { buffer: out, name: `${baseName(file.name)}.txt`, ext: 'txt' };
+}));
+
+// Conversion: Text (.txt) -> PDF
+router.post('/convert/txt-to-pdf', exportTask(async (req) => {
+  const [file] = await loadOwned(req.user.id, [req.body.fileId], ['text/plain']);
+  const buffer = await readFile(req.user.id, file.storage_key);
+  const out = await txtToPdf(buffer);
+  return { buffer: out, name: `${baseName(file.name)}.pdf`, ext: 'pdf' };
+}));
+
+// Compression: Compress PDF
+router.post('/compress', exportTask(async (req) => {
+  const [file] = await loadOwned(req.user.id, [req.body.fileId], ['application/pdf']);
+  const buffer = await readFile(req.user.id, file.storage_key);
+  const out = await compressPdf(buffer);
+  return { buffer: out, name: `${baseName(file.name)}-compressed.pdf`, ext: 'pdf', pages: file.page_count };
 }));
 
 export default router;

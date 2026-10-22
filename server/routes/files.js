@@ -17,11 +17,15 @@ const MAX_BYTES = config.maxUploadMb * 1024 * 1024;
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_BYTES, files: 20 },
-  fileFilter: (req, file, cb) => cb(null, file.mimetype === 'application/pdf' || /\.pdf$/i.test(file.originalname)),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const ok = /^\.(pdf|png|jpe?g|webp|docx|txt)$/i.test(ext);
+    cb(null, ok);
+  },
 });
 
 /** Strip characters that are unsafe in file names. */
-export function cleanName(name, fallback = 'document.pdf') {
+export function cleanName(name, fallback = 'document') {
   const cleaned = String(name || '').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim().slice(0, 180);
   return cleaned || fallback;
 }
@@ -48,7 +52,9 @@ export async function getOwnedFile(userId, id) {
 
 /** Make a file searchable by the assistant without delaying the response. */
 export function indexInBackground(row) {
-  waitUntil(indexFile(row));
+  if (row.mime === 'application/pdf') {
+    waitUntil(indexFile(row));
+  }
 }
 
 /** Check that a buffer is a readable PDF. Returns its page count or throws a user-facing error. */
@@ -57,11 +63,27 @@ async function validatePdf(buffer) {
   return pageCount(buffer);
 }
 
-async function insertUpload(userId, name, size, pages, key) {
+function getMimeType(name) {
+  const ext = path.extname(name).toLowerCase();
+  switch (ext) {
+    case '.pdf': return 'application/pdf';
+    case '.png': return 'image/png';
+    case '.jpg':
+    case '.jpeg': return 'image/jpeg';
+    case '.webp': return 'image/webp';
+    case '.docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case '.txt': return 'text/plain';
+    case '.zip': return 'application/zip';
+    default: return 'application/octet-stream';
+  }
+}
+
+async function insertUpload(userId, name, size, pages, key, mime = null) {
+  const resolvedMime = mime || getMimeType(name);
   const row = await one(
     `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key)
-     VALUES ($1, 'upload', $2, 'application/pdf', $3, $4, $5) RETURNING *`,
-    [userId, name, size, pages, key],
+     VALUES ($1, 'upload', $2, $3, $4, $5, $6) RETURNING *`,
+    [userId, name, resolvedMime, size, pages, key],
   );
   indexInBackground(row);
   return toClient(row);
@@ -74,20 +96,28 @@ router.get('/config', (req, res) => {
 
 // Server upload (local storage, or small files). Vercel limits request bodies to ~4.5 MB.
 router.post('/', upload.array('files', 20), async (req, res) => {
-  if (!req.files?.length) return res.status(400).json({ error: 'Choose at least one PDF file.' });
+  if (!req.files?.length) return res.status(400).json({ error: 'Choose at least one file.' });
   const saved = [];
   const rejected = [];
   for (const f of req.files) {
-    const name = cleanName(fromLatin1(f.originalname));
-    let pages;
-    try {
-      pages = await validatePdf(f.buffer);
-    } catch (err) {
-      rejected.push({ name, error: err.message });
-      continue;
+    const original = fromLatin1(f.originalname);
+    const name = cleanName(original);
+    const mime = getMimeType(original);
+    let pages = null;
+
+    if (mime === 'application/pdf') {
+      try {
+        pages = await validatePdf(f.buffer);
+      } catch (err) {
+        rejected.push({ name, error: err.message });
+        continue;
+      }
+    } else if (mime.startsWith('image/')) {
+      pages = 1;
     }
-    const key = await saveFile(req.user.id, f.buffer, { name });
-    saved.push(await insertUpload(req.user.id, name, f.size, pages, key));
+
+    const key = await saveFile(req.user.id, f.buffer, { name, contentType: mime });
+    saved.push(await insertUpload(req.user.id, name, f.size, pages, key, mime));
   }
   res.status(saved.length ? 201 : 422).json({ files: saved, rejected, error: saved.length ? undefined : rejected[0]?.error });
 });
@@ -101,11 +131,18 @@ router.post('/upload-token', async (req, res) => {
     body: req.body,
     request: req,
     onBeforeGenerateToken: async (pathname) => {
-      if (!isUserBlobKey(userId, pathname) || !/\.pdf$/i.test(pathname)) {
+      if (!isUserBlobKey(userId, pathname) || !/\.(pdf|png|jpe?g|webp|docx|txt)$/i.test(pathname)) {
         throw Object.assign(new Error('Invalid upload path.'), { status: 400 });
       }
       return {
-        allowedContentTypes: ['application/pdf'],
+        allowedContentTypes: [
+          'application/pdf',
+          'image/png',
+          'image/jpeg',
+          'image/webp',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'text/plain',
+        ],
         maximumSizeInBytes: MAX_BYTES,
         addRandomSuffix: false,
         allowOverwrite: false,
@@ -126,6 +163,7 @@ router.post('/register', async (req, res) => {
     return res.status(409).json({ error: 'This upload was already added.' });
   }
   const name = cleanName(req.body.name);
+  const mime = getMimeType(name);
 
   let buffer;
   try {
@@ -133,14 +171,18 @@ router.post('/register', async (req, res) => {
   } catch {
     return res.status(404).json({ error: 'Upload not found. Please try again.' });
   }
-  let pages;
-  try {
-    pages = await validatePdf(buffer);
-  } catch (err) {
-    await deleteFile(userId, key).catch(() => {});
-    return res.status(422).json({ error: err.message });
+  let pages = null;
+  if (mime === 'application/pdf') {
+    try {
+      pages = await validatePdf(buffer);
+    } catch (err) {
+      await deleteFile(userId, key).catch(() => {});
+      return res.status(422).json({ error: err.message });
+    }
+  } else if (mime.startsWith('image/')) {
+    pages = 1;
   }
-  res.status(201).json({ file: await insertUpload(userId, name, buffer.length, pages, key) });
+  res.status(201).json({ file: await insertUpload(userId, name, buffer.length, pages, key, mime) });
 });
 
 router.get('/', async (req, res) => {

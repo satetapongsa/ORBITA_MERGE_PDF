@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { FileStack, FolderOpen, LayoutGrid, LogOut, Sparkles, UserRound } from 'lucide-react';
+import { FileStack, FolderOpen, LayoutGrid, LogOut, RefreshCw, Sparkles, UserRound } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 
 export function Brand({ to = '/' }) {
@@ -61,6 +61,7 @@ export default function Layout() {
           <Brand />
           <nav className="nav">
             <NavLink to="/" end><LayoutGrid size={16} /><span>Tools</span></NavLink>
+            <NavLink to="/convert"><RefreshCw size={16} /><span>Convert</span></NavLink>
             <NavLink to="/files"><FolderOpen size={16} /><span>My files</span></NavLink>
             <NavLink to="/assistant"><Sparkles size={16} /><span>Assistant</span><span className="pro-tag">PRO</span></NavLink>
             <NavLink to="/account"><UserRound size={16} /><span>Account</span></NavLink>

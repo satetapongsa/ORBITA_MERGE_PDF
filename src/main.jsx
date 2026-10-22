@@ -13,6 +13,7 @@ import OrganizeTool from './pages/OrganizeTool.jsx';
 import Files from './pages/Files.jsx';
 import Account from './pages/Account.jsx';
 import Assistant from './pages/Assistant.jsx';
+import ConvertTool from './pages/ConvertTool.jsx';
 import './styles.css';
 
 function Protected({ children }) {
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')).render(
               <Route path="merge" element={<MergeTool />} />
               <Route path="split" element={<SplitTool />} />
               <Route path="organize" element={<OrganizeTool />} />
+              <Route path="convert" element={<ConvertTool />} />
               <Route path="files" element={<Files />} />
               <Route path="account" element={<Account />} />
               <Route path="assistant" element={<Assistant />} />

@@ -8,7 +8,15 @@ import FilePicker from './FilePicker.jsx';
  * Drop or browse PDFs. Files are uploaded to the user's private storage and
  * returned as stored-file records via onFiles.
  */
-export default function Dropzone({ onFiles, multiple = true, compact = false, title, subtitle }) {
+export default function Dropzone({
+  onFiles,
+  multiple = true,
+  compact = false,
+  title,
+  subtitle,
+  accept = 'application/pdf,.pdf',
+  fileTypeLabel = 'PDF files',
+}) {
   const input = useRef(null);
   const [over, setOver] = useState(false);
   const [progress, setProgress] = useState(null);
@@ -16,8 +24,12 @@ export default function Dropzone({ onFiles, multiple = true, compact = false, ti
   const toast = useToast();
 
   async function handle(list) {
-    const files = [...list].filter((f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
-    if (!files.length) return toast('Please choose PDF files.', 'error');
+    const extensions = accept.split(',').map((s) => s.trim().toLowerCase());
+    const files = [...list].filter((f) => {
+      const ext = `.${f.name.split('.').pop().toLowerCase()}`;
+      return extensions.some((a) => a === ext || a === f.type || (a.endsWith('/*') && f.type.startsWith(a.slice(0, -1))));
+    });
+    if (!files.length) return toast(`Please choose valid ${fileTypeLabel}.`, 'error');
     const batch = multiple ? files : files.slice(0, 1);
     setProgress(0);
     try {
@@ -48,7 +60,7 @@ export default function Dropzone({ onFiles, multiple = true, compact = false, ti
         <input
           ref={input}
           type="file"
-          accept="application/pdf,.pdf"
+          accept={accept}
           multiple={multiple}
           hidden
           onChange={(e) => handle(e.target.files)}

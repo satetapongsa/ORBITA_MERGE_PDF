@@ -29,7 +29,8 @@ function randomHex(bytes = 16) {
 
 function blobFileName(name) {
   const safe = name.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}._-]/gu, '_').replace(/^[._]+/, '').slice(-100);
-  return /\.pdf$/i.test(safe) ? safe : `${safe || 'document'}.pdf`;
+  const hasExt = /\.[a-z0-9]+$/i.test(safe);
+  return hasExt ? safe : `${safe || 'document'}.pdf`;
 }
 
 /**

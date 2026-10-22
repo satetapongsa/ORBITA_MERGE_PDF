@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpDown, Combine, Download, FileArchive, FileText, Scissors, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpDown, Combine, Download, FileArchive, FileText, Scissors, Sparkles, RefreshCw } from 'lucide-react';
 import { api, downloadFile, formatBytes } from '../api.js';
 import { useAuth } from '../auth.jsx';
 
@@ -8,6 +8,7 @@ const TOOLS = [
   { to: '/merge', icon: Combine, title: 'Merge PDFs', text: 'Combine several PDFs into one document, in the order you set.' },
   { to: '/split', icon: Scissors, title: 'Split PDF', text: 'Break a PDF into single pages or custom page ranges.' },
   { to: '/organize', icon: ArrowUpDown, title: 'Reorder pages', text: 'Drag pages into a new order, rotate them, or remove the ones you don’t need.' },
+  { to: '/convert', icon: RefreshCw, title: 'Convert & Compress', text: 'Convert Images to PDF, PDF to Word/Text, Text to PDF, and Compress files.' },
 ];
 
 export default function Home() {
