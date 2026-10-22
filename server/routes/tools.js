@@ -51,9 +51,9 @@ function exportTask(handler) {
 
       const key = await saveFile(userId, buffer, { name, contentType: mime });
       const row = await one(
-        `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key)
-         VALUES ($1, 'output', $2, $3, $4, $5, $6) RETURNING *`,
-        [userId, name, mime, buffer.length, pages, key],
+        `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key, data)
+         VALUES ($1, 'output', $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [userId, name, mime, buffer.length, pages, key, buffer],
       );
       indexInBackground(row);
       res.status(201).json({ file: toClient(row), account: await getAccountSummary(userId) });

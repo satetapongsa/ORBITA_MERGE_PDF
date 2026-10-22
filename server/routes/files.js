@@ -88,12 +88,12 @@ function getMimeType(name) {
   }
 }
 
-async function insertUpload(userId, name, size, pages, key, mime = null) {
+async function insertUpload(userId, name, size, pages, key, mime = null, buffer = null) {
   const resolvedMime = mime || getMimeType(name);
   const row = await one(
-    `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key)
-     VALUES ($1, 'upload', $2, $3, $4, $5, $6) RETURNING *`,
-    [userId, name, resolvedMime, size, pages, key],
+    `INSERT INTO files (user_id, kind, name, mime, size_bytes, page_count, storage_key, data)
+     VALUES ($1, 'upload', $2, $3, $4, $5, $6, $7) RETURNING *`,
+    [userId, name, resolvedMime, size, pages, key, buffer],
   );
   indexInBackground(row);
   return toClient(row);
@@ -127,7 +127,7 @@ router.post('/', upload.array('files', 100), async (req, res) => {
     }
 
     const key = await saveFile(req.user.id, f.buffer, { name, contentType: mime });
-    saved.push(await insertUpload(req.user.id, name, f.size, pages, key, mime));
+    saved.push(await insertUpload(req.user.id, name, f.size, pages, key, mime, f.buffer));
   }
   res.status(saved.length ? 201 : 422).json({ files: saved, rejected, error: saved.length ? undefined : rejected[0]?.error });
 });

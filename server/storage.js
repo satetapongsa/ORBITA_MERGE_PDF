@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { put, get, del, issueSignedToken, presignUrl } from '@vercel/blob';
 import { config, ConfigError } from './config.js';
+import { pool, query, one } from './db.js';
 
 // Two interchangeable backends:
 //  - "blob":  Vercel Blob (private access). Used when BLOB_READ_WRITE_TOKEN is set, e.g. on Vercel.
@@ -69,19 +70,32 @@ export async function saveFile(userId, buffer, { name, contentType = 'applicatio
     return key;
   }
   const dir = path.join(config.storageDir, userId);
-  await fs.mkdir(dir, { recursive: true });
+  await fs.mkdir(dir, { recursive: true }).catch(() => {});
   const extMatch = name?.match(/\.([a-z0-9]+)$/i);
   let ext = extMatch ? extMatch[1].toLowerCase() : 'pdf';
   if (contentType === 'application/zip') ext = 'zip';
   if (contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') ext = 'docx';
   if (contentType === 'text/plain') ext = 'txt';
   const key = `${crypto.randomBytes(16).toString('hex')}.${ext}`;
-  await fs.writeFile(path.join(dir, key), buffer);
+  try {
+    await fs.writeFile(path.join(dir, key), buffer);
+  } catch (err) {
+    console.warn('Local fs write warning:', err.message);
+  }
   return key;
 }
 
 export async function readFile(userId, key) {
-  if (storageMode === 'local') return fs.readFile(localPath(userId, key));
+  if (storageMode === 'local') {
+    try {
+      return await fs.readFile(localPath(userId, key));
+    } catch {
+      // Fallback: load directly from PostgreSQL database bytea
+      const row = await one('SELECT data FROM files WHERE user_id = $1 AND storage_key = $2', [userId, key]);
+      if (row?.data) return Buffer.from(row.data);
+      throw Object.assign(new Error('File content is missing.'), { status: 404 });
+    }
+  }
   checkKey(userId, key);
   const result = await get(key, { access: 'private', useCache: false });
   if (!result || result.statusCode !== 200) throw Object.assign(new Error('File content is missing.'), { status: 404 });
@@ -89,7 +103,10 @@ export async function readFile(userId, key) {
 }
 
 export async function deleteFile(userId, key) {
-  if (storageMode === 'local') return fs.rm(localPath(userId, key), { force: true });
+  if (storageMode === 'local') {
+    await fs.rm(localPath(userId, key), { force: true }).catch(() => {});
+    return;
+  }
   checkKey(userId, key);
   await del(key);
 }
@@ -98,18 +115,23 @@ export async function deleteFile(userId, key) {
 export async function sendStoredFile(res, file, { download = false } = {}) {
   const disposition = `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(file.name)}`;
   res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('Content-Type', file.mime || 'application/octet-stream');
+  res.setHeader('Content-Disposition', disposition);
 
   if (storageMode === 'local') {
-    res.setHeader('Content-Type', file.mime);
-    res.setHeader('Content-Disposition', disposition);
-    return res.sendFile(localPath(file.user_id, file.storage_key));
+    try {
+      const buffer = await readFile(file.user_id, file.storage_key);
+      res.setHeader('Content-Length', String(buffer.length));
+      return res.end(buffer);
+    } catch {
+      return res.status(404).json({ error: 'File content not found.' });
+    }
   }
 
   checkKey(file.user_id, file.storage_key);
   if (Number(file.size_bytes) <= MAX_STREAM_BYTES) {
     const buffer = await readFile(file.user_id, file.storage_key);
-    res.setHeader('Content-Type', file.mime);
-    res.setHeader('Content-Disposition', disposition);
+    res.setHeader('Content-Length', String(buffer.length));
     return res.end(buffer);
   }
   // Large file: redirect to a signed URL that only works for this one file, for 10 minutes.
