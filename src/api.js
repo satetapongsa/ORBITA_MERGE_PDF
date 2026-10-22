@@ -27,14 +27,33 @@ function randomHex(bytes = 16) {
   return [...crypto.getRandomValues(new Uint8Array(bytes))].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+function getClientMimeType(name, fileType) {
+  if (fileType) return fileType;
+  const ext = name.split('.').pop().toLowerCase();
+  switch (ext) {
+    case 'pdf': return 'application/pdf';
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'webp': return 'image/webp';
+    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'txt': return 'text/plain';
+    case 'zip': return 'application/zip';
+    default: return 'application/octet-stream';
+  }
+}
+
 function blobFileName(name) {
-  const safe = name.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}._-]/gu, '_').replace(/^[._]+/, '').slice(-100);
-  const hasExt = /\.[a-z0-9]+$/i.test(safe);
-  return hasExt ? safe : `${safe || 'document'}.pdf`;
+  const parts = name.split('.');
+  const ext = parts.length > 1 ? `.${parts.pop().toLowerCase()}` : '';
+  const rawBase = parts.join('.');
+  const safeBase = rawBase.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}._-]/gu, '_').replace(/^[._]+/, '').slice(-90);
+  const base = safeBase || 'document';
+  return ext ? `${base}${ext}` : `${base}.pdf`;
 }
 
 /**
- * Upload PDFs with progress reporting (0–1). On Vercel the files go straight from the
+ * Upload files with progress reporting (0–1). On Vercel the files go straight from the
  * browser to private Blob storage (no 4.5 MB request limit); otherwise through the API.
  * Resolves to { files, rejected } either way.
  */
@@ -70,10 +89,12 @@ export async function uploadFiles(fileList, onProgress) {
 
   for (const file of accepted) {
     try {
-      const key = `users/${cfg.userId}/${randomHex()}/${blobFileName(file.name)}`;
+      const mime = getClientMimeType(file.name, file.type);
+      const safeName = blobFileName(file.name);
+      const key = `users/${cfg.userId}/${randomHex()}/${safeName}`;
       await upload(key, file, {
         access: 'private',
-        contentType: 'application/pdf',
+        contentType: mime,
         handleUploadUrl: '/api/files/upload-token',
         multipart: file.size > 20 * 1024 * 1024,
         onUploadProgress: ({ loaded: n }) => { loaded.set(file, n); report(); },
