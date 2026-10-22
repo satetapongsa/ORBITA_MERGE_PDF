@@ -16,7 +16,7 @@ const MAX_BYTES = config.maxUploadMb * 1024 * 1024;
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_BYTES, files: 20 },
+  limits: { fileSize: MAX_BYTES, files: 100 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const ok = /^\.(pdf|png|jpe?g|webp|docx|txt)$/i.test(ext);
@@ -95,7 +95,7 @@ router.get('/config', (req, res) => {
 });
 
 // Server upload (local storage, or small files). Vercel limits request bodies to ~4.5 MB.
-router.post('/', upload.array('files', 20), async (req, res) => {
+router.post('/', upload.array('files', 100), async (req, res) => {
   if (!req.files?.length) return res.status(400).json({ error: 'Choose at least one file.' });
   const saved = [];
   const rejected = [];

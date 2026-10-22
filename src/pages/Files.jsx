@@ -57,8 +57,15 @@ export default function Files() {
           <p>Your uploads and exports, visible only to you. <span className="mono small muted">{files?.length ?? 0} files · {formatBytes(totalSize)}</span></p>
         </div>
         <label className="btn btn-primary">
-          {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />} Upload PDFs
-          <input type="file" accept="application/pdf,.pdf" multiple hidden onChange={upload} disabled={uploading} />
+          {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />} อัปโหลดไฟล์
+          <input
+            type="file"
+            accept="application/pdf,image/png,image/jpeg,image/webp,text/plain,.pdf,.png,.jpg,.jpeg,.webp,.docx,.txt"
+            multiple
+            hidden
+            onChange={upload}
+            disabled={uploading}
+          />
         </label>
       </div>
 
