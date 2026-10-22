@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, FileText, Image as ImageIcon, FileCode, Minimize2, Check, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, FileText, Image as ImageIcon, FileCode, Minimize2, Check, RefreshCw, X, Images } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Dropzone from '../components/Dropzone.jsx';
 import ExportPanel, { useExport } from '../components/ExportPanel.jsx';
@@ -8,56 +8,67 @@ import { formatBytes } from '../api.js';
 const MODES = [
   {
     id: 'images-to-pdf',
-    title: 'Images to PDF',
-    desc: 'Convert JPG, PNG, or WebP images into a single PDF document.',
+    title: 'รูปภาพ เป็น PDF',
+    desc: 'รวมภาพ JPG, PNG หรือ WebP หลายๆ รูปเข้าเป็นเอกสาร PDF ฉบับเดียว',
     accept: 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp',
-    label: 'Images (JPG, PNG, WebP)',
+    label: 'ไฟล์รูปภาพ (JPG, PNG, WebP)',
     multiple: true,
-    action: 'Convert to PDF',
+    action: 'แปลงเป็นเอกสาร PDF',
     endpoint: 'convert/images-to-pdf',
     icon: ImageIcon,
   },
   {
-    id: 'pdf-to-docx',
-    title: 'PDF to Word (.docx)',
-    desc: 'Extract formatted document and text into an editable Word file.',
+    id: 'pdf-to-images',
+    title: 'PDF เป็น ภาพ PNG',
+    desc: 'แยกหน้าของเอกสาร PDF แต่ละหน้าออกมาเป็นไฟล์ภาพ PNG คมชัดสูง (หรือ ZIP รวม)',
     accept: 'application/pdf,.pdf',
-    label: 'PDF Document',
+    label: 'เอกสาร PDF',
     multiple: false,
-    action: 'Convert to Word (.docx)',
+    action: 'แปลงเป็นภาพ PNG',
+    endpoint: 'convert/pdf-to-images',
+    icon: Images,
+  },
+  {
+    id: 'pdf-to-docx',
+    title: 'PDF เป็น Word (.docx)',
+    desc: 'สกัดเนื้อหาเอกสารและข้อความออกมาเป็นไฟล์ Word ที่แก้ไขได้',
+    accept: 'application/pdf,.pdf',
+    label: 'เอกสาร PDF',
+    multiple: false,
+    action: 'แปลงเป็นไฟล์ Word (.docx)',
     endpoint: 'convert/pdf-to-docx',
     icon: FileText,
   },
   {
     id: 'pdf-to-txt',
-    title: 'PDF to Text (.txt)',
-    desc: 'Extract clean raw text from your PDF page by page.',
+    title: 'PDF เป็น ข้อความ (.txt)',
+    desc: 'สกัดข้อความทั้งหมดใน PDF แยกแต่ละหน้าเป็นไฟล์ข้อความธรรมดา',
     accept: 'application/pdf,.pdf',
-    label: 'PDF Document',
+    label: 'เอกสาร PDF',
     multiple: false,
-    action: 'Convert to Text (.txt)',
+    action: 'แปลงเป็นข้อความ (.txt)',
     endpoint: 'convert/pdf-to-txt',
     icon: FileCode,
   },
   {
     id: 'txt-to-pdf',
-    title: 'Text to PDF',
-    desc: 'Create an organized, formatted PDF from a plain text file.',
+    title: 'ข้อความ (.txt) เป็น PDF',
+    desc: 'นำไฟล์ข้อความมาจัดหน้าเป็นเอกสาร PDF พร้อมพิมพ์หรือแชร์',
     accept: 'text/plain,.txt',
-    label: 'Text file (.txt)',
+    label: 'ไฟล์ข้อความ (.txt)',
     multiple: false,
-    action: 'Convert to PDF',
+    action: 'แปลงเป็นเอกสาร PDF',
     endpoint: 'convert/txt-to-pdf',
     icon: FileText,
   },
   {
     id: 'compress',
-    title: 'Compress PDF',
-    desc: 'Reduce file size and optimize PDF streams for fast sharing.',
+    title: 'บีบอัดไฟล์ PDF (Compress)',
+    desc: 'ย่อขนาดไฟล์ PDF และเพิ่มประสิทธิภาพของเอกสารเพื่อให้ส่งต่อง่าย',
     accept: 'application/pdf,.pdf',
-    label: 'PDF Document',
+    label: 'เอกสาร PDF',
     multiple: false,
-    action: 'Compress PDF',
+    action: 'บีบอัดลดขนาด PDF',
     endpoint: 'compress',
     icon: Minimize2,
   },
@@ -99,13 +110,13 @@ export default function ConvertTool() {
   return (
     <div className="tool-page">
       <div className="tool-head">
-        <Link to="/" className="back-link"><ArrowLeft size={16} /> All tools</Link>
-        <h1>Smart File Converter</h1>
-        <p className="muted">Convert images, documents, and optimize PDF files seamlessly.</p>
+        <Link to="/" className="back-link"><ArrowLeft size={16} /> ย้อนกลับไปหน้าเครื่องมือ</Link>
+        <h1>ระบบแปลงและย่อขนาดไฟล์อัจฉริยะ (Smart Converter)</h1>
+        <p className="muted">แปลงไฟล์รูปภาพ, เอกสาร Word, ข้อความ Text และบีบอัดไฟล์ PDF ได้ง่ายๆ ในที่เดียว</p>
       </div>
 
       {/* Mode selection tabs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginBottom: 24 }}>
         {MODES.map((mode) => {
           const Icon = mode.icon;
           const isSelected = activeMode.id === mode.id;
@@ -152,16 +163,16 @@ export default function ConvertTool() {
               multiple={activeMode.multiple}
               accept={activeMode.accept}
               fileTypeLabel={activeMode.label}
-              title={`Drop ${activeMode.label} here`}
-              subtitle={activeMode.multiple ? 'or browse multiple files from your computer' : 'or browse a file from your computer'}
+              title={`ลากวาง ${activeMode.label} ที่นี่`}
+              subtitle={activeMode.multiple ? 'หรือคลิกเพื่อเลือกหลายไฟล์จากเครื่องของคุณ' : 'หรือคลิกเพื่อเลือกไฟล์จากเครื่องของคุณ'}
             />
           </div>
 
           {selectedFiles.length > 0 && (
             <div className="card" style={{ padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontWeight: 600 }}>Selected files ({selectedFiles.length})</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFiles([])}>Clear all</button>
+                <span style={{ fontWeight: 600 }}>ไฟล์ที่เลือกไว้ ({selectedFiles.length})</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFiles([])}>ล้างทั้งหมด</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {selectedFiles.map((file, idx) => (
@@ -177,7 +188,7 @@ export default function ConvertTool() {
                         <div className="mono small muted">{formatBytes(file.size)}</div>
                       </div>
                     </div>
-                    <button className="btn btn-ghost btn-icon" onClick={() => removeFile(idx)} aria-label="Remove">
+                    <button className="btn btn-ghost btn-icon" onClick={() => removeFile(idx)} aria-label="ลบไฟล์นี้">
                       <X size={16} />
                     </button>
                   </div>
@@ -188,7 +199,7 @@ export default function ConvertTool() {
         </div>
 
         <ExportPanel
-          title="Conversion Details"
+          title="รายละเอียดการแปลงไฟล์"
           actionLabel={activeMode.action}
           disabled={selectedFiles.length === 0}
           onExport={handleRun}
@@ -196,15 +207,15 @@ export default function ConvertTool() {
         >
           <div className="stack" style={{ gap: 12, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="muted">Operation:</span>
+              <span className="muted">ประเภทคำสั่ง:</span>
               <b>{activeMode.title}</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="muted">Input files:</span>
-              <span className="mono">{selectedFiles.length} file(s)</span>
+              <span className="muted">จำนวนไฟล์:</span>
+              <span className="mono">{selectedFiles.length} ไฟล์</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="muted">Total size:</span>
+              <span className="muted">ขนาดรวม:</span>
               <span className="mono">{formatBytes(selectedFiles.reduce((sum, f) => sum + f.size, 0))}</span>
             </div>
           </div>

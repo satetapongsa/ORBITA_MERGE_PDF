@@ -174,3 +174,37 @@ export async function compressPdf(pdfBuffer) {
   });
   return Buffer.from(saved);
 }
+
+/** Convert PDF to PNG images (returns either a single PNG buffer or a ZIP of PNGs) */
+export async function pdfToImages(pdfBuffer, baseName = 'page') {
+  const { pdfToPng } = await import('pdf-to-png-converter');
+  const pngPages = await pdfToPng(pdfBuffer, {
+    viewportScale: 2.0, // High quality 2x scale
+  });
+
+  if (!pngPages || !pngPages.length) {
+    throw new Error('Could not render pages from PDF.');
+  }
+
+  if (pngPages.length === 1) {
+    return {
+      buffer: pngPages[0].content,
+      name: `${baseName}-p1.png`,
+      ext: 'png',
+      pages: 1,
+    };
+  }
+
+  const zip = new JSZip();
+  pngPages.forEach((p, idx) => {
+    zip.file(`${baseName}-p${idx + 1}.png`, p.content);
+  });
+
+  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  return {
+    buffer: zipBuffer,
+    name: `${baseName}-images.zip`,
+    ext: 'zip',
+    pages: pngPages.length,
+  };
+}

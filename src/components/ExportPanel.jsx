@@ -47,7 +47,7 @@ export default function ExportPanel({ title, children, actionLabel, disabled, on
               <span>{error.message}</span>
               {error.limit && account?.plan === 'free' && (
                 <Link to="/account" className="btn btn-sm btn-primary" style={{ alignSelf: 'flex-start' }}>
-                  <Sparkles size={14} /> Upgrade — 20 THB/mo
+                  <Sparkles size={14} /> อัปเกรดเป็น Pro — 20 บาท/เดือน
                 </Link>
               )}
             </div>
@@ -55,12 +55,12 @@ export default function ExportPanel({ title, children, actionLabel, disabled, on
         )}
         <button className="btn btn-primary btn-lg btn-block" disabled={disabled || busy || left === 0} onClick={onExport}>
           {busy ? <Loader2 size={18} className="spin" /> : <Download size={18} />}
-          {busy ? 'Processing…' : actionLabel}
+          {busy ? 'กำลังประมวลผล…' : actionLabel}
         </button>
         <p className="quota-note">
           {left > 0
-            ? <>Uses 1 export · <span className="mono">{left}</span> of <span className="mono">{account?.dailyLimit}</span> left today</>
-            : <>No exports left today · resets at midnight</>}
+            ? <>ใช้โควตา 1 ครั้ง · เหลือสิทธิ์ <span className="mono">{left}</span> จาก <span className="mono">{account?.dailyLimit}</span> ครั้งวันนี้</>
+            : <>โควตาวันนี้หมดแล้ว · ระบบจะรีเซ็ตสิทธิ์ทุกเที่ยงคืน</>}
         </p>
       </div>
     </aside>
@@ -68,24 +68,24 @@ export default function ExportPanel({ title, children, actionLabel, disabled, on
 }
 
 /** Success screen after an export. */
-export function ExportResult({ file, onReset, resetLabel = 'Start a new task' }) {
+export function ExportResult({ file, onReset, resetLabel = 'เริ่มทำรายการใหม่' }) {
   const isZip = file.mime === 'application/zip';
   return (
     <div className="card result">
       <div className="result-icon"><CheckCircle2 size={28} /></div>
       <div>
-        <h2>Your file is ready</h2>
-        <p className="muted" style={{ marginTop: 4 }}>The download should start automatically. A copy is saved in My files.</p>
+        <h2>ไฟล์ของคุณพร้อมแล้ว!</h2>
+        <p className="muted" style={{ marginTop: 4 }}>ระบบจะเริ่มดาวน์โหลดให้อัตโนมัติ และบันทึกสำเนาไว้ใน "ไฟล์ของฉัน"</p>
       </div>
       <div className="file-chip">
         {isZip ? <FileArchive size={18} color="var(--accent)" /> : <FileText size={18} color="var(--accent)" />}
         <span>{file.name}</span>
-        <span className="mono small muted">{file.pageCount ? `${file.pageCount} pp · ` : ''}{formatBytes(file.size)}</span>
+        <span className="mono small muted">{file.pageCount ? `${file.pageCount} หน้า · ` : ''}{formatBytes(file.size)}</span>
       </div>
       <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-        <button className="btn btn-primary" onClick={() => downloadFile(file)}><Download size={16} /> Download again</button>
+        <button className="btn btn-primary" onClick={() => downloadFile(file)}><Download size={16} /> ดาวน์โหลดอีกครั้ง</button>
         <button className="btn" onClick={onReset}><RotateCcw size={16} /> {resetLabel}</button>
-        <Link className="btn btn-ghost" to="/files">Go to My files</Link>
+        <Link className="btn btn-ghost" to="/files">ไปที่ไฟล์ของฉัน</Link>
       </div>
     </div>
   );

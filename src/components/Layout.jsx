@@ -15,9 +15,9 @@ export function Brand({ to = '/' }) {
 function UsagePill({ account }) {
   const pct = Math.min((account.used / account.dailyLimit) * 100, 100);
   return (
-    <Link to="/account" className="usage" title="Exports used today — resets at midnight">
+    <Link to="/account" className="usage" title="สิทธิ์การใช้งานวันนี้ — รีเซ็ตทุกเที่ยงคืน">
       <span className={`badge ${account.plan === 'pro' ? 'badge-pro' : ''}`}>{account.planName}</span>
-      <span className="usage-text"><b>{account.used}</b>/{account.dailyLimit} today</span>
+      <span className="usage-text">ใช้ไป <b>{account.used}</b>/{account.dailyLimit} วันนี้</span>
       <span className={`meter ${pct >= 100 ? 'full' : ''}`}><span style={{ width: `${pct}%` }} /></span>
     </Link>
   );
@@ -42,9 +42,9 @@ function UserMenu({ user, onSignOut }) {
             <div style={{ fontWeight: 600 }}>{user.username}</div>
             {user.email && <div className="small muted">{user.email}</div>}
           </div>
-          <Link to="/account"><UserRound size={16} /> Account & plan</Link>
-          <Link to="/files"><FolderOpen size={16} /> My files</Link>
-          <button onClick={onSignOut}><LogOut size={16} /> Sign out</button>
+          <Link to="/account"><UserRound size={16} /> ข้อมูลบัญชีและแพ็กเกจ</Link>
+          <Link to="/files"><FolderOpen size={16} /> ไฟล์ของฉัน</Link>
+          <button onClick={onSignOut}><LogOut size={16} /> ออกจากระบบ</button>
         </div>
       )}
     </div>
@@ -60,11 +60,11 @@ export default function Layout() {
         <div className="topbar-inner">
           <Brand />
           <nav className="nav">
-            <NavLink to="/" end><LayoutGrid size={16} /><span>Tools</span></NavLink>
-            <NavLink to="/convert"><RefreshCw size={16} /><span>Convert</span></NavLink>
-            <NavLink to="/files"><FolderOpen size={16} /><span>My files</span></NavLink>
-            <NavLink to="/assistant"><Sparkles size={16} /><span>Assistant</span><span className="pro-tag">PRO</span></NavLink>
-            <NavLink to="/account"><UserRound size={16} /><span>Account</span></NavLink>
+            <NavLink to="/" end><LayoutGrid size={16} /><span>เครื่องมือทั้งหมด</span></NavLink>
+            <NavLink to="/convert"><RefreshCw size={16} /><span>แปลงและย่อไฟล์</span></NavLink>
+            <NavLink to="/files"><FolderOpen size={16} /><span>ไฟล์ของฉัน</span></NavLink>
+            <NavLink to="/assistant"><Sparkles size={16} /><span>AI ผู้ช่วย</span><span className="pro-tag">PRO</span></NavLink>
+            <NavLink to="/account"><UserRound size={16} /><span>บัญชีผู้ใช้</span></NavLink>
           </nav>
           <div className="topbar-right">
             {account && <UsagePill account={account} />}
@@ -73,7 +73,7 @@ export default function Layout() {
         </div>
       </header>
       <main className="main"><Outlet /></main>
-      <footer className="footer mono">PageSmith · files are stored privately in your account</footer>
+      <footer className="footer mono">PageSmith · ไฟล์ของคุณถูกจัดเก็บอย่างปลอดภัยและเป็นส่วนตัวในบัญชีของคุณ</footer>
     </div>
   );
 }

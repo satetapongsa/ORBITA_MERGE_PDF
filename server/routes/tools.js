@@ -5,7 +5,7 @@ import { one } from '../db.js';
 import { requireAuth } from '../auth.js';
 import { readFile, saveFile } from '../storage.js';
 import { merge, split, assemble, parseRanges } from '../pdf.js';
-import { imagesToPdf, pdfToDocx, pdfToTxt, txtToPdf, compressPdf } from '../converter.js';
+import { imagesToPdf, pdfToDocx, pdfToTxt, txtToPdf, compressPdf, pdfToImages } from '../converter.js';
 import { getPlan, consumeExport, refundExport, getAccountSummary } from '../plans.js';
 import { getOwnedFile, toClient, indexInBackground } from './files.js';
 
@@ -143,6 +143,14 @@ router.post('/convert/txt-to-pdf', exportTask(async (req) => {
   const buffer = await readFile(req.user.id, file.storage_key);
   const out = await txtToPdf(buffer);
   return { buffer: out, name: `${baseName(file.name)}.pdf`, ext: 'pdf' };
+}));
+
+// Conversion: PDF -> Images (PNG / ZIP)
+router.post('/convert/pdf-to-images', exportTask(async (req) => {
+  const [file] = await loadOwned(req.user.id, [req.body.fileId], ['application/pdf']);
+  const buffer = await readFile(req.user.id, file.storage_key);
+  const res = await pdfToImages(buffer, baseName(file.name));
+  return res;
 }));
 
 // Compression: Compress PDF

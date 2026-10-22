@@ -5,10 +5,10 @@ import { api, downloadFile, formatBytes } from '../api.js';
 import { useAuth } from '../auth.jsx';
 
 const TOOLS = [
-  { to: '/merge', icon: Combine, title: 'Merge PDFs', text: 'Combine several PDFs into one document, in the order you set.' },
-  { to: '/split', icon: Scissors, title: 'Split PDF', text: 'Break a PDF into single pages or custom page ranges.' },
-  { to: '/organize', icon: ArrowUpDown, title: 'Reorder pages', text: 'Drag pages into a new order, rotate them, or remove the ones you don’t need.' },
-  { to: '/convert', icon: RefreshCw, title: 'Convert & Compress', text: 'Convert Images to PDF, PDF to Word/Text, Text to PDF, and Compress files.' },
+  { to: '/merge', icon: Combine, title: 'รวมไฟล์ PDF', text: 'รวมไฟล์ PDF หลายๆ ไฟล์เข้าด้วยกันตามลำดับที่คุณต้องการ' },
+  { to: '/split', icon: Scissors, title: 'แยกไฟล์ PDF', text: 'แยกหน้าเอกสาร PDF เป็นรายหน้า หรือกำหนดช่วงหน้าที่ต้องการแยก' },
+  { to: '/organize', icon: ArrowUpDown, title: 'จัดเรียงและหมุนหน้า', text: 'ลากสลับหน้า หมุนทิศทาง หรือลบหน้าที่ไม่ต้องการออกได้อิสระ' },
+  { to: '/convert', icon: RefreshCw, title: 'แปลงและย่อไฟล์', text: 'แปลงภาพเป็น PDF, PDF เป็นภาพ/Word/ข้อความ และบีบอัดไฟล์ PDF' },
 ];
 
 export default function Home() {
@@ -22,11 +22,11 @@ export default function Home() {
   return (
     <>
       <div className="hero">
-        <div className="eyebrow">// workspace</div>
-        <h1>Hi {user.username}, what would you like to do?</h1>
+        <div className="eyebrow">// พื้นที่ทำงาน</div>
+        <h1>สวัสดีคุณ {user.username}, วันนี้ต้องการทำอะไร?</h1>
         <p>
-          Pick a tool to get started.{' '}
-          {account && <>You have <b className="mono">{account.remaining}</b> of {account.dailyLimit} exports left today.</>}
+          เลือกเครื่องมือเพื่อเริ่มต้นใช้งาน{' '}
+          {account && <>วันนี้คุณเหลือสิทธิ์การส่งออก <b className="mono">{account.remaining}</b> จากทั้งหมด {account.dailyLimit} ครั้ง</>}
         </p>
       </div>
 
@@ -37,7 +37,7 @@ export default function Home() {
             <div className="tool-icon"><Icon size={22} /></div>
             <h2>{title}</h2>
             <p>{text}</p>
-            <span className="go">Open tool <ArrowRight size={14} /></span>
+            <span className="go">เปิดเครื่องมือ <ArrowRight size={14} /></span>
           </Link>
         ))}
       </div>
@@ -45,18 +45,18 @@ export default function Home() {
       <Link to="/assistant" className="card assistant-banner">
         <div className="tool-icon"><Sparkles size={20} /></div>
         <div style={{ flex: 1 }}>
-          <h3>Ask PageSmith 5.5 Pro about your files <span className="badge badge-pro" style={{ marginLeft: 6 }}>Pro</span></h3>
-          <p className="muted small">Find a document or pull answers from inside your PDFs, in Thai or English.</p>
+          <h3>ถาม PageSmith 5.5 Pro เกี่ยวกับเอกสารของคุณ <span className="badge badge-pro" style={{ marginLeft: 6 }}>Pro</span></h3>
+          <p className="muted small">ค้นหาเอกสารหรือดึงคำตอบจากเนื้อหาข้างใน PDF ได้อย่างแม่นยำ รองรับภาษาไทยและอังกฤษ</p>
         </div>
         <ArrowRight size={16} color="var(--accent)" />
       </Link>
 
       <div className="section-title">
-        <h2>Recent exports</h2>
-        <Link to="/files" className="small">View all files</Link>
+        <h2>ประวัติการส่งออกล่าสุด</h2>
+        <Link to="/files" className="small">ดูไฟล์ทั้งหมด</Link>
       </div>
       <div className="card">
-        {recent && recent.length === 0 && <div className="empty">Your exported files will appear here.</div>}
+        {recent && recent.length === 0 && <div className="empty">ยังไม่มีประวัติการส่งออกไฟล์ของคุณ</div>}
         {recent && recent.length > 0 && (
           <table className="table">
             <tbody>
@@ -71,7 +71,7 @@ export default function Home() {
                   <td className="num hide-sm">{formatBytes(f.size)}</td>
                   <td className="num hide-sm">{new Date(f.createdAt).toLocaleString()}</td>
                   <td className="actions">
-                    <button className="btn btn-sm" onClick={() => downloadFile(f)}><Download size={14} /> Download</button>
+                    <button className="btn btn-sm" onClick={() => downloadFile(f)}><Download size={14} /> ดาวน์โหลด</button>
                   </td>
                 </tr>
               ))}
