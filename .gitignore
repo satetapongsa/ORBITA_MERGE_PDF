@@ -1,27 +1,6 @@
-# Dependencies & build output
 node_modules/
 dist/
-dist-ssr/
-
-# Secrets — never commit real environment files (only .env.example)
 .env
-.env.*
-!.env.example
-*.pem
-*.key
-
-# User uploads (per-user private storage)
+.env.local
 storage/
-
-# Logs
-logs/
 *.log
-npm-debug.log*
-
-# Editor / OS
-.vscode/*
-!.vscode/extensions.json
-.idea/
-.DS_Store
-Thumbs.db
-*.local
