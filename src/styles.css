@@ -160,21 +160,13 @@ body.light-theme .navbar {
 }
 
 .logo-text {
-  font-size: 1.25rem;
+  font-size: 1.32rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-}
-
-.logo-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-full);
-  color: var(--primary-light);
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
+  background: var(--gradient-cosmic);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 .nav-controls {
@@ -209,13 +201,19 @@ body.light-theme .nav-icon-btn {
   border-color: rgba(99, 102, 241, 0.3);
 }
 
-/* Top Category Bar & Pills */
+/* Top Category Bar (Positioned Above Top Navigation Bar) */
 .top-category-nav {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 0.75rem;
+  background: rgba(7, 9, 19, 0.85);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.65rem 1.5rem;
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 101;
+}
+
+body.light-theme .top-category-nav {
+  background: rgba(248, 250, 252, 0.85);
 }
 
 .category-filter-bar {
@@ -257,7 +255,7 @@ body.light-theme .category-pill {
 /* Vibrant Colorful Tool Cards Grid */
 .tools-hub {
   max-width: 1240px;
-  margin: 0 auto 2.5rem;
+  margin: 1.5rem auto 2.5rem;
   padding: 0 1.5rem;
 }
 
