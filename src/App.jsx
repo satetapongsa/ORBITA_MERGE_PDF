@@ -971,12 +971,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Clean Minimal Hero Header */}
-      <section className="clean-hero">
-        <h1>{lang === 'th' ? 'ระบบแปลงไฟล์' : 'All-in-One'} <span className="gradient-text">{lang === 'th' ? 'อัจฉริยะ' : 'File Converter'}</span></h1>
-        <p>{t.subline}</p>
-
-        {/* Category Filter Pills */}
+      {/* Top Category Filter Bar */}
+      <section className="top-category-nav">
         <div className="category-filter-bar">
           {CATEGORIES.map(cat => {
             let label = cat;
