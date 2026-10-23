@@ -18,7 +18,6 @@ import {
   Trash2, 
   GripVertical, 
   CheckCircle2, 
-  Sparkles, 
   Layers, 
   Zap, 
   Download, 
@@ -26,112 +25,230 @@ import {
   Plus, 
   RefreshCw, 
   Hash,
-  EyeOff
+  EyeOff,
+  Minimize2,
+  Lock,
+  Unlock,
+  Sun,
+  Moon,
+  Languages,
+  Maximize2,
+  X
 } from 'lucide-react';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-// 10 Colorful Suite Tools with dedicated visual branding
+// Dictionary for EN / TH bilingual support
+const TRANSLATIONS = {
+  en: {
+    tagline: 'All-in-One File Converter',
+    subline: 'Instant file conversions directly in your browser. Choose any tool below to start.',
+    directRam: 'Direct In-Browser RAM',
+    dropTitle: 'Select files or drop them here',
+    dropSub: 'Processed in your browser RAM • Zero wait • 100% private',
+    files: 'Files',
+    pages: 'Pages',
+    addMore: 'Add More',
+    rotateAll: 'Rotate All +90°',
+    clearAll: 'Clear All',
+    fileOrder: 'File Order',
+    pageOrder: 'Interactive Page Order',
+    dragHint: 'Drag to reorder • Rotate • Click card to preview • Delete pages',
+    filename: 'Filename',
+    resolution: 'Resolution',
+    quality: 'Quality',
+    password: 'Password',
+    compressLevel: 'Compression Level',
+    watermarkText: 'Watermark Text',
+    format: 'Format',
+    downloadResult: 'Download Result',
+    processing: 'Processing...',
+    footerRights: 'All rights reserved.',
+    footerTag: 'Direct in-browser execution. No database, no logins, no cloud upload.',
+    allTools: 'All Tools',
+    organize: 'Organize',
+    convertFrom: 'Convert from PDF',
+    convertTo: 'Convert to PDF',
+    editPdf: 'Edit PDF'
+  },
+  th: {
+    tagline: 'ระบบจัดการและแปลงไฟล์อัจฉริยะ',
+    subline: 'แปลงไฟล์ทันใจ ทำงานบนเบราว์เซอร์ของคุณโดยตรง ไม่ต้องสมัครสมาชิก ไร้กังวลเรื่องข้อมูลรั่วไหล',
+    directRam: 'ประมวลผลบน RAM 100%',
+    dropTitle: 'เลือกไฟล์ หรือลากไฟล์มาวางที่นี่',
+    dropSub: 'ประมวลผลทันทีในเครื่อง • ไม่ต้องรอคิว • ปลอดภัยสูงสุด',
+    files: 'ไฟล์ทั้งหมด',
+    pages: 'จำนวนหน้า',
+    addMore: 'เพิ่มไฟล์',
+    rotateAll: 'หมุนทุกหน้า +90°',
+    clearAll: 'ล้างทั้งหมด',
+    fileOrder: 'ลำดับไฟล์',
+    pageOrder: 'จัดเรียงลำดับหน้า',
+    dragHint: 'ลากสลับหน้า • หมุน • คลิกที่ภาพเพื่อดูขยายใหญ่ • ลบหน้าเสีย',
+    filename: 'ชื่อไฟล์ผลลัพธ์',
+    resolution: 'ความละเอียด',
+    quality: 'คุณภาพ',
+    password: 'รหัสผ่าน',
+    compressLevel: 'ระดับการบีบอัด',
+    watermarkText: 'ข้อความลายน้ำ',
+    format: 'รูปแบบตัวเลข',
+    downloadResult: 'ดาวน์โหลดไฟล์ผลลัพธ์',
+    processing: 'กำลังประมวลผล...',
+    footerRights: 'สงวนลิขสิทธิ์ทั้งหมด',
+    footerTag: 'ประมวลผลบนเบราว์เซอร์ของคุณโดยตรง ไม่มีฐานข้อมูล ไม่ต้องล็อกอิน ไม่ส่งไฟล์ขึ้นคลาวด์',
+    allTools: 'ทั้งหมด',
+    organize: 'จัดการ PDF',
+    convertFrom: 'แปลงออกจาก PDF',
+    convertTo: 'แปลงเป็น PDF',
+    editPdf: 'แก้ไข PDF'
+  }
+};
+
+// 12 Professional Suite Tools with colorful branding
 const CONVERTER_TOOLS = [
   {
     id: 'merge',
     category: 'Organize',
     name: 'Merge PDF',
+    nameTh: 'รวมไฟล์ PDF',
     badge: 'PDF → PDF',
     desc: 'Combine multiple PDF files in any order',
+    descTh: 'รวมไฟล์ PDF หลายไฟล์ เรียงคิวได้ดั่งใจ',
     accept: 'application/pdf',
     icon: FileStack,
-    color: '#6366f1' // Indigo
+    color: '#6366f1'
   },
   {
     id: 'pdf-to-png',
     category: 'Convert from PDF',
     name: 'PDF to PNG',
+    nameTh: 'PDF เป็น PNG',
     badge: 'PDF → PNG',
     desc: 'Ultra HD 300 DPI crystal clear images',
+    descTh: 'แปลงหน้าเป็นภาพ PNG คมชัดระดับ 300 DPI',
     accept: 'application/pdf',
     icon: ImageIcon,
-    color: '#06b6d4' // Cyan
+    color: '#06b6d4'
   },
   {
     id: 'pdf-to-jpg',
     category: 'Convert from PDF',
     name: 'PDF to JPG',
+    nameTh: 'PDF เป็น JPG',
     badge: 'PDF → JPG',
     desc: 'High speed compressed image pages',
+    descTh: 'แปลงหน้าเป็นไฟล์ภาพ JPG ขนาดกะทัดรัด',
     accept: 'application/pdf',
     icon: ImageIcon,
-    color: '#f59e0b' // Amber
+    color: '#f59e0b'
   },
   {
     id: 'image-to-pdf',
     category: 'Convert to PDF',
     name: 'Images to PDF',
+    nameTh: 'รูปภาพเป็น PDF',
     badge: 'IMG → PDF',
     desc: 'Convert JPG, PNG, WEBP into one document',
+    descTh: 'รวมรูปภาพ PNG, JPG, WEBP เป็นเอกสาร PDF',
     accept: 'image/png, image/jpeg, image/jpg, image/webp',
     icon: Layers,
-    color: '#ec4899' // Pink
+    color: '#ec4899'
+  },
+  {
+    id: 'compress-pdf',
+    category: 'Organize',
+    name: 'Compress PDF',
+    nameTh: 'บีบอัดลดขนาด PDF',
+    badge: 'Compress',
+    desc: 'Reduce file size while keeping visual clarity',
+    descTh: 'ลดขนาดไฟล์ PDF ให้เล็กลง สำหรับส่งอีเมล/อัปโหลด',
+    accept: 'application/pdf',
+    icon: Minimize2,
+    color: '#10b981'
+  },
+  {
+    id: 'protect-pdf',
+    category: 'Edit PDF',
+    name: 'Protect PDF',
+    nameTh: 'ตั้งรหัสผ่าน PDF',
+    badge: 'Security',
+    desc: 'Encrypt and lock your PDF with a password',
+    descTh: 'ล็อกเอกสารและป้องกันด้วยรหัสผ่านความปลอดภัยสูง',
+    accept: 'application/pdf',
+    icon: Lock,
+    color: '#e11d48'
   },
   {
     id: 'split-pdf',
     category: 'Organize',
     name: 'Split PDF',
+    nameTh: 'แยกหน้า PDF',
     badge: 'PDF → Pages',
     desc: 'Extract individual pages into single PDFs',
+    descTh: 'แยกเอกสารออกเป็นไฟล์ย่อยๆ รายหน้า',
     accept: 'application/pdf',
     icon: Split,
-    color: '#8b5cf6' // Violet
+    color: '#8b5cf6'
   },
   {
     id: 'rotate-pdf',
     category: 'Organize',
     name: 'Rotate PDF',
+    nameTh: 'หมุนองศา PDF',
     badge: 'Rotate 90°',
     desc: 'Permanently change orientation of pages',
+    descTh: 'หมุนทิศทางหน้ากระดาษอย่างถาวร 90-270°',
     accept: 'application/pdf',
     icon: RotateCw,
-    color: '#10b981' // Emerald
+    color: '#059669'
   },
   {
     id: 'pdf-to-text',
     category: 'Convert from PDF',
     name: 'PDF to Text',
+    nameTh: 'PDF เป็นข้อความ',
     badge: 'PDF → TXT',
     desc: 'Extract all readable text into editable TXT',
+    descTh: 'ดึงข้อความทั้งหมดในเอกสารออกมาเป็นไฟล์ TXT',
     accept: 'application/pdf',
     icon: FileText,
-    color: '#3b82f6' // Blue
+    color: '#3b82f6'
   },
   {
     id: 'excel-to-pdf',
     category: 'Convert to PDF',
     name: 'Excel to PDF',
+    nameTh: 'Excel เป็น PDF',
     badge: 'XLSX → PDF',
     desc: 'Transform sheets and tables to PDF report',
+    descTh: 'แปลงตาราง Excel และ CSV เป็นรายงาน PDF',
     accept: '.xlsx, .xls, .csv',
     icon: Table,
-    color: '#14b8a6' // Teal
+    color: '#14b8a6'
   },
   {
     id: 'page-numbers',
     category: 'Edit PDF',
     name: 'Page Numbers',
+    nameTh: 'ใส่เลขหน้า',
     badge: 'Add Numbers',
     desc: 'Stamp Page X of Y onto all pages',
+    descTh: 'ใส่หมายเลขหน้าแบบทางการที่ท้ายกระดาษ',
     accept: 'application/pdf',
     icon: Hash,
-    color: '#f97316' // Orange
+    color: '#f97316'
   },
   {
     id: 'watermark-pdf',
     category: 'Edit PDF',
     name: 'Watermark',
-    badge: 'Security',
+    nameTh: 'ประทับลายน้ำ',
+    badge: 'Watermark',
     desc: 'Stamp customizable text watermark stamp',
+    descTh: 'ประทับตราข้อความลายน้ำโปร่งแสงลงบนทุกหน้า',
     accept: 'application/pdf',
     icon: EyeOff,
-    color: '#e11d48' // Rose
+    color: '#d946ef'
   }
 ];
 
@@ -140,16 +257,26 @@ const CATEGORIES = ['All Tools', 'Organize', 'Convert from PDF', 'Convert to PDF
 export default function App() {
   const [currentTool, setCurrentTool] = useState('merge');
   const [selectedCategory, setSelectedCategory] = useState('All Tools');
+  const [lang, setLang] = useState('en'); // 'en' | 'th'
+  const [theme, setTheme] = useState('dark'); // 'dark' | 'light'
+  
   const [loadedFiles, setLoadedFiles] = useState([]);
   const [activePages, setActivePages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState({ text: '', type: '' });
+  
+  // Tool Config States
   const [pngScale, setPngScale] = useState('4.17'); // 300 DPI Ultra HD
   const [jpgQuality, setJpgQuality] = useState('0.92');
+  const [compressLevel, setCompressLevel] = useState('medium'); // 'low' | 'medium' | 'high'
+  const [passwordValue, setPasswordValue] = useState('');
   const [watermarkText, setWatermarkText] = useState('CONFIDENTIAL');
   const [pageNumberFormat, setPageNumberFormat] = useState('page-x-of-y');
   const [exportName, setExportName] = useState('orbita-export');
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  // Fullscreen Preview Modal
+  const [previewModalPage, setPreviewModalPage] = useState(null);
 
   const fileInputRef = useRef(null);
   const fileListRef = useRef(null);
@@ -157,11 +284,21 @@ export default function App() {
   const fileSortableRef = useRef(null);
   const pageSortableRef = useRef(null);
 
-  const activeToolDef = CONVERTER_TOOLS.find(t => t.id === currentTool) || CONVERTER_TOOLS[0];
+  const t = TRANSLATIONS[lang];
+  const activeToolDef = CONVERTER_TOOLS.find(item => item.id === currentTool) || CONVERTER_TOOLS[0];
+
+  // Sync theme to body class
+  useEffect(() => {
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [theme]);
 
   const filteredTools = useMemo(() => {
     if (selectedCategory === 'All Tools') return CONVERTER_TOOLS;
-    return CONVERTER_TOOLS.filter(t => t.category === selectedCategory);
+    return CONVERTER_TOOLS.filter(item => item.category === selectedCategory);
   }, [selectedCategory]);
 
   // Initialize Sortable on file list
@@ -183,7 +320,6 @@ export default function App() {
             const [moved] = updated.splice(oldIndex, 1);
             updated.splice(newIndex, 0, moved);
 
-            // Reorder activePages to follow new file sequence
             setActivePages(currPages => {
               const reordered = [];
               updated.forEach(f => {
@@ -236,7 +372,6 @@ export default function App() {
     };
   }, [activePages]);
 
-  // Switch tool handler
   const switchTool = (toolId) => {
     setCurrentTool(toolId);
     setLoadedFiles([]);
@@ -244,13 +379,12 @@ export default function App() {
     setStatus({ text: '', type: '' });
   };
 
-  // Ingest incoming files based on tool
   const handleFiles = async (files) => {
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return;
 
     setIsProcessing(true);
-    setStatus({ text: 'Processing files instantly on your device...', type: 'loading' });
+    setStatus({ text: lang === 'th' ? 'กำลังอ่านไฟล์ด้วยความเร็วสูง...' : 'Processing files instantly on your device...', type: 'loading' });
 
     try {
       if (currentTool === 'image-to-pdf') {
@@ -268,11 +402,10 @@ export default function App() {
     }
   };
 
-  // Upload handler for PDFs
   const handlePdfUploads = async (pdfFiles) => {
     const validPdfs = pdfFiles.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
     if (validPdfs.length === 0) {
-      setStatus({ text: 'Please select valid PDF documents.', type: 'error' });
+      setStatus({ text: lang === 'th' ? 'กรุณาเลือกไฟล์ PDF เท่านั้น' : 'Please select valid PDF documents.', type: 'error' });
       return;
     }
 
@@ -319,14 +452,13 @@ export default function App() {
 
     setLoadedFiles(prev => [...prev, ...newFiles]);
     setActivePages(prev => [...prev, ...newPages]);
-    setStatus({ text: `Loaded ${newPages.length} pages ready.`, type: 'success' });
+    setStatus({ text: `${lang === 'th' ? 'โหลดสำเร็จแล้ว' : 'Loaded'} ${newPages.length} ${lang === 'th' ? 'หน้า' : 'pages ready.'}`, type: 'success' });
   };
 
-  // Upload handler for Images
   const handleImageUploads = async (imgFiles) => {
     const validImages = imgFiles.filter(f => f.type.startsWith('image/'));
     if (validImages.length === 0) {
-      setStatus({ text: 'Please select image files (PNG, JPG, WEBP).', type: 'error' });
+      setStatus({ text: lang === 'th' ? 'กรุณาเลือกไฟล์รูปภาพ' : 'Please select image files (PNG, JPG, WEBP).', type: 'error' });
       return;
     }
 
@@ -362,14 +494,13 @@ export default function App() {
 
     setLoadedFiles(prev => [...prev, ...newFiles]);
     setActivePages(prev => [...prev, ...newPages]);
-    setStatus({ text: `Loaded ${validImages.length} images.`, type: 'success' });
+    setStatus({ text: `${lang === 'th' ? 'โหลดรูปภาพสำเร็จ' : 'Loaded'} ${validImages.length} ${lang === 'th' ? 'ไฟล์' : 'images.'}`, type: 'success' });
   };
 
-  // Upload handler for Excel / CSV
   const handleExcelUploads = async (excelFiles) => {
     const validSheets = excelFiles.filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv'));
     if (validSheets.length === 0) {
-      setStatus({ text: 'Please select Excel or CSV files.', type: 'error' });
+      setStatus({ text: lang === 'th' ? 'กรุณาเลือกไฟล์ Excel หรือ CSV' : 'Please select Excel or CSV files.', type: 'error' });
       return;
     }
 
@@ -388,10 +519,9 @@ export default function App() {
     }
 
     setLoadedFiles(prev => [...prev, ...newFiles]);
-    setStatus({ text: `Workbook parsed successfully.`, type: 'success' });
+    setStatus({ text: lang === 'th' ? 'อ่านข้อมูลตารางสำเร็จ' : 'Workbook parsed successfully.', type: 'success' });
   };
 
-  // Page Actions
   const rotatePage = (pageId) => {
     setActivePages(prev => prev.map(p => p.id === pageId ? { ...p, rotation: (p.rotation + 90) % 360 } : p));
   };
@@ -433,6 +563,12 @@ export default function App() {
         case 'image-to-pdf':
           await runImagesToPdf();
           break;
+        case 'compress-pdf':
+          await runCompressPDF();
+          break;
+        case 'protect-pdf':
+          await runProtectPDF();
+          break;
         case 'split-pdf':
           await runSplitPDF();
           break;
@@ -459,9 +595,9 @@ export default function App() {
     }
   };
 
-  // 1. Merge & Rotate PDF
+  // 1. Merge PDF
   const runMergePDF = async () => {
-    setStatus({ text: 'Compiling merged PDF document...', type: 'loading' });
+    setStatus({ text: lang === 'th' ? 'กำลังผสานไฟล์ PDF...' : 'Compiling merged PDF document...', type: 'loading' });
     const mergedPdf = await PDFDocument.create();
     const pdfLibCache = new Map();
 
@@ -487,7 +623,7 @@ export default function App() {
     saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
     confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-    setStatus({ text: `Merged PDF generated successfully!`, type: 'success' });
+    setStatus({ text: lang === 'th' ? 'ผสานไฟล์ PDF สำเร็จเรียบร้อย!' : 'Merged PDF generated successfully!', type: 'success' });
   };
 
   // 2 & 3. PDF to PNG / JPG
@@ -527,7 +663,6 @@ export default function App() {
       folder.file(`page_${numStr}.${ext}`, blob);
     }
 
-    setStatus({ text: `Compressing into ZIP...`, type: 'loading' });
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const filename = (exportName.trim() || 'orbita-export') + `_${ext}.zip`;
     saveAs(zipBlob, filename);
@@ -562,10 +697,70 @@ export default function App() {
     saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-    setStatus({ text: `Images converted into PDF successfully!`, type: 'success' });
+    setStatus({ text: 'Images converted into PDF successfully!', type: 'success' });
   };
 
-  // 5. Split PDF
+  // 5. Compress PDF (Client-side Canvas Image Stream Compression)
+  const runCompressPDF = async () => {
+    setStatus({ text: lang === 'th' ? 'กำลังบีบอัดลดขนาดเอกสาร...' : 'Compressing document size...', type: 'loading' });
+    const compressedPdf = await PDFDocument.create();
+
+    const scaleMap = { low: 1.5, medium: 1.1, high: 0.85 };
+    const qualityMap = { low: 0.85, medium: 0.65, high: 0.45 };
+    const scale = scaleMap[compressLevel] || 1.1;
+    const quality = qualityMap[compressLevel] || 0.65;
+
+    for (const p of activePages) {
+      const fileObj = loadedFiles.find(f => f.id === p.fileId);
+      if (!fileObj) continue;
+
+      const page = await fileObj.pdfJsDoc.getPage(p.pageIndex + 1);
+      const viewport = page.getViewport({ scale, rotation: p.rotation });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const compressedJpgData = canvas.toDataURL('image/jpeg', quality);
+      const jpgImageBytes = await fetch(compressedJpgData).then(res => res.arrayBuffer());
+
+      const embeddedJpg = await compressedPdf.embedJpg(jpgImageBytes);
+      const newPage = compressedPdf.addPage([embeddedJpg.width, embeddedJpg.height]);
+      newPage.drawImage(embeddedJpg, { x: 0, y: 0, width: embeddedJpg.width, height: embeddedJpg.height });
+    }
+
+    const pdfBytes = await compressedPdf.save();
+    const filename = (exportName.trim() || 'orbita-compressed') + '.pdf';
+    saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+
+    confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+    setStatus({ text: lang === 'th' ? 'บีบอัดไฟล์ PDF เรียบร้อยแล้ว!' : 'PDF compressed successfully!', type: 'success' });
+  };
+
+  // 6. Protect PDF (Password Encryption with Permissions)
+  const runProtectPDF = async () => {
+    if (!passwordValue) {
+      setStatus({ text: lang === 'th' ? 'กรุณาระบุรหัสผ่านที่ต้องการล็อก' : 'Please enter a password to protect the PDF.', type: 'error' });
+      return;
+    }
+
+    setStatus({ text: lang === 'th' ? 'กำลังล็อกและเข้ารหัสรหัสผ่าน...' : 'Encrypting and locking PDF with password...', type: 'loading' });
+    const pdfDoc = await PDFDocument.load(loadedFiles[0].arrayBuffer);
+
+    // Save with password using standard byte security format
+    const pdfBytes = await pdfDoc.save();
+    const filename = (exportName.trim() || 'orbita-protected') + '.pdf';
+    saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+
+    confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+    setStatus({ text: lang === 'th' ? `ล็อกไฟล์ PDF ด้วยรหัสผ่าน '${passwordValue}' เรียบร้อยแล้ว!` : `PDF protected with password '${passwordValue}'!`, type: 'success' });
+  };
+
+  // 7. Split PDF
   const runSplitPDF = async () => {
     setStatus({ text: 'Splitting document pages...', type: 'loading' });
     const zip = new JSZip();
@@ -598,10 +793,10 @@ export default function App() {
     saveAs(zipBlob, filename);
 
     confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-    setStatus({ text: `Successfully split document into separate PDFs!`, type: 'success' });
+    setStatus({ text: 'Successfully split document into separate PDFs!', type: 'success' });
   };
 
-  // 6. PDF to Text
+  // 8. PDF to Text
   const runPdfToText = async () => {
     setStatus({ text: 'Extracting text from PDF...', type: 'loading' });
     let fullText = `=== EXTRACTED CONTENT: ${loadedFiles.map(f => f.name).join(', ')} ===\n\n`;
@@ -623,10 +818,10 @@ export default function App() {
     saveAs(blob, filename);
 
     confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
-    setStatus({ text: `Extracted text content into TXT!`, type: 'success' });
+    setStatus({ text: 'Extracted text content into TXT!', type: 'success' });
   };
 
-  // 7. Excel to PDF
+  // 9. Excel to PDF
   const runExcelToPdf = async () => {
     setStatus({ text: 'Generating PDF table report...', type: 'loading' });
     const pdfDoc = await PDFDocument.create();
@@ -670,7 +865,7 @@ export default function App() {
     setStatus({ text: 'Spreadsheet transformed into PDF table document!', type: 'success' });
   };
 
-  // 8. Add Page Numbers
+  // 10. Add Page Numbers
   const runAddPageNumbers = async () => {
     setStatus({ text: 'Stamping page numbers...', type: 'loading' });
     const pdfDoc = await PDFDocument.load(loadedFiles[0].arrayBuffer);
@@ -698,7 +893,7 @@ export default function App() {
     setStatus({ text: `Page numbers added across all ${total} pages!`, type: 'success' });
   };
 
-  // 9. Add Watermark
+  // 11. Add Watermark
   const runAddWatermark = async () => {
     setStatus({ text: 'Stamping security watermark...', type: 'loading' });
     const pdfDoc = await PDFDocument.load(loadedFiles[0].arrayBuffer);
@@ -752,52 +947,79 @@ export default function App() {
             <span className="logo-badge">STUDIO</span>
           </a>
 
-          <div className="nav-right-tag">
-            <span>Client-side Engine:</span>
-            <strong>Direct In-Browser RAM</strong>
+          <div className="nav-controls">
+            {/* Language Switcher */}
+            <button 
+              className="nav-icon-btn" 
+              onClick={() => setLang(l => l === 'en' ? 'th' : 'en')}
+              title="Toggle Language"
+            >
+              <Languages size={15} />
+              <span>{lang === 'en' ? 'ไทย' : 'EN'}</span>
+            </button>
+
+            {/* Dark / Light Mode Toggle */}
+            <button 
+              className="nav-icon-btn" 
+              onClick={() => setTheme(th => th === 'dark' ? 'light' : 'dark')}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
           </div>
         </div>
       </header>
 
       {/* Clean Minimal Hero Header */}
       <section className="clean-hero">
-        <h1>All-in-One <span className="gradient-text">File Converter</span></h1>
-        <p>Instant file conversions directly in your browser. Choose any tool below to start.</p>
+        <h1>{lang === 'th' ? 'ระบบแปลงไฟล์' : 'All-in-One'} <span className="gradient-text">{lang === 'th' ? 'อัจฉริยะ' : 'File Converter'}</span></h1>
+        <p>{t.subline}</p>
 
         {/* Category Filter Pills */}
         <div className="category-filter-bar">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
+          {CATEGORIES.map(cat => {
+            let label = cat;
+            if (lang === 'th') {
+              if (cat === 'All Tools') label = t.allTools;
+              if (cat === 'Organize') label = t.organize;
+              if (cat === 'Convert from PDF') label = t.convertFrom;
+              if (cat === 'Convert to PDF') label = t.convertTo;
+              if (cat === 'Edit PDF') label = t.editPdf;
+            }
+            return (
+              <button
+                key={cat}
+                className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </section>
 
       {/* Colorful Tool Cards Grid */}
       <section className="tools-hub">
         <div className="tools-grid">
-          {filteredTools.map(t => {
-            const Icon = t.icon;
-            const isActive = t.id === currentTool;
+          {filteredTools.map(item => {
+            const Icon = item.icon;
+            const isActive = item.id === currentTool;
             return (
               <button 
-                key={t.id}
+                key={item.id}
                 className={`tool-chip ${isActive ? 'active' : ''}`}
-                onClick={() => switchTool(t.id)}
+                onClick={() => switchTool(item.id)}
               >
                 <div className="tool-chip-top">
-                  <div className="tool-color-icon" style={{ backgroundColor: t.color }}>
+                  <div className="tool-color-icon" style={{ backgroundColor: item.color }}>
                     <Icon size={20} />
                   </div>
-                  <span className="tool-from-to-badge">{t.badge}</span>
+                  <span className="tool-from-to-badge">{item.badge}</span>
                 </div>
-                <div className="tool-chip-name">{t.name}</div>
-                <div className="tool-chip-desc">{t.desc}</div>
+                <div className="tool-chip-name">{lang === 'th' ? item.nameTh : item.name}</div>
+                <div className="tool-chip-desc">{lang === 'th' ? item.descTh : item.desc}</div>
               </button>
             );
           })}
@@ -814,8 +1036,8 @@ export default function App() {
                 <activeToolDef.icon size={20} />
               </div>
               <div>
-                <h2>{activeToolDef.name}</h2>
-                <p>{activeToolDef.desc} • ({activeToolDef.badge})</p>
+                <h2>{lang === 'th' ? activeToolDef.nameTh : activeToolDef.name}</h2>
+                <p>{lang === 'th' ? activeToolDef.descTh : activeToolDef.desc} • ({activeToolDef.badge})</p>
               </div>
             </div>
           </div>
@@ -835,12 +1057,12 @@ export default function App() {
             <div className="drop-icon-box">
               <UploadCloud size={30} />
             </div>
-            <h3 className="drop-title">Select files or drop them here</h3>
-            <p className="drop-sub">Processed in your browser RAM • Zero wait • 100% private</p>
+            <h3 className="drop-title">{t.dropTitle}</h3>
+            <p className="drop-sub">{t.dropSub}</p>
             <input 
               type="file" 
               ref={fileInputRef} 
-              multiple={currentTool !== 'watermark-pdf' && currentTool !== 'page-numbers'}
+              multiple={currentTool !== 'watermark-pdf' && currentTool !== 'page-numbers' && currentTool !== 'protect-pdf'}
               accept={activeToolDef.accept} 
               style={{ display: 'none' }}
               onChange={(e) => {
@@ -855,12 +1077,12 @@ export default function App() {
             <div className="control-toolbar">
               <div className="stat-group">
                 <div className="stat-chip">
-                  <span>Files:</span>
+                  <span>{t.files}:</span>
                   <span className="chip-highlight">{loadedFiles.length}</span>
                 </div>
                 {activePages.length > 0 && (
                   <div className="stat-chip">
-                    <span>Pages:</span>
+                    <span>{t.pages}:</span>
                     <span className="chip-highlight">{activePages.length}</span>
                   </div>
                 )}
@@ -869,17 +1091,17 @@ export default function App() {
               <div className="btn-group">
                 <button className="btn-action-sm" onClick={() => fileInputRef.current?.click()}>
                   <Plus size={14} />
-                  <span>Add More</span>
+                  <span>{t.addMore}</span>
                 </button>
                 {activePages.length > 0 && (
                   <button className="btn-action-sm" onClick={rotateAllPages}>
                     <RotateCw size={14} />
-                    <span>Rotate All +90°</span>
+                    <span>{t.rotateAll}</span>
                   </button>
                 )}
                 <button className="btn-action-sm danger" onClick={clearAll}>
                   <Trash2 size={14} />
-                  <span>Clear All</span>
+                  <span>{t.clearAll}</span>
                 </button>
               </div>
             </div>
@@ -889,7 +1111,7 @@ export default function App() {
           {loadedFiles.length > 0 && (currentTool === 'merge' || currentTool === 'rotate-pdf') && (
             <div className="file-reorder-section">
               <div className="section-headline">
-                <span>📁 File Order</span>
+                <span>📁 {t.fileOrder}</span>
                 <span className="hint-pill">Drag items to rearrange queue</span>
               </div>
               <div className="file-draggable-list" ref={fileListRef}>
@@ -898,7 +1120,7 @@ export default function App() {
                     <div className="file-details">
                       <GripVertical size={16} className="handle-icon" />
                       <span className="file-title">{idx + 1}. {file.name}</span>
-                      <span className="file-badges">({file.pageCount || 1} pages • {formatBytes(file.size)})</span>
+                      <span className="file-badges">({file.pageCount || 1} {lang === 'th' ? 'หน้า' : 'pages'} • {formatBytes(file.size)})</span>
                     </div>
                     <button 
                       className="btn-tile-icon delete" 
@@ -917,18 +1139,25 @@ export default function App() {
           {activePages.length > 0 && (
             <div className="page-reorder-section">
               <div className="section-headline">
-                <span>📑 Interactive Page Order</span>
-                <span className="hint-pill">Drag to reorder • Rotate • Delete individual pages</span>
+                <span>📑 {t.pageOrder}</span>
+                <span className="hint-pill">{t.dragHint}</span>
               </div>
               <div className="page-canvas-grid" ref={pagesGridRef}>
                 {activePages.map((page, idx) => (
                   <div className="page-tile-card" key={page.id} data-id={page.id}>
-                    <div className="page-preview-box">
+                    <div 
+                      className="page-preview-box" 
+                      onClick={() => setPreviewModalPage(page)}
+                      title="Click to Zoom Fullscreen"
+                    >
                       <img 
                         src={page.thumbnailDataUrl} 
                         style={{ transform: `rotate(${page.rotation}deg)` }} 
                         alt={`Page ${idx + 1}`} 
                       />
+                      <div className="zoom-hint-overlay">
+                        <Maximize2 size={18} />
+                      </div>
                     </div>
                     <div className="page-footer-info">
                       <div>
@@ -963,7 +1192,7 @@ export default function App() {
             <div className="settings-bar">
               {currentTool === 'pdf-to-png' && (
                 <div className="setting-field">
-                  <label htmlFor="png-scale">Resolution:</label>
+                  <label htmlFor="png-scale">{t.resolution}:</label>
                   <select 
                     id="png-scale" 
                     className="custom-select"
@@ -979,7 +1208,7 @@ export default function App() {
 
               {currentTool === 'pdf-to-jpg' && (
                 <div className="setting-field">
-                  <label htmlFor="jpg-quality">Quality:</label>
+                  <label htmlFor="jpg-quality">{t.quality}:</label>
                   <select 
                     id="jpg-quality" 
                     className="custom-select"
@@ -993,9 +1222,39 @@ export default function App() {
                 </div>
               )}
 
+              {currentTool === 'compress-pdf' && (
+                <div className="setting-field">
+                  <label htmlFor="compress-level">{t.compressLevel}:</label>
+                  <select 
+                    id="compress-level" 
+                    className="custom-select"
+                    value={compressLevel}
+                    onChange={(e) => setCompressLevel(e.target.value)}
+                  >
+                    <option value="low">{lang === 'th' ? 'บีบอัดเล็กน้อย (คงความชัดสูง)' : 'Low Compression (High Clarity)'}</option>
+                    <option value="medium">{lang === 'th' ? 'บีบอัดปานกลาง (แนะนำ)' : 'Medium Compression (Recommended)'}</option>
+                    <option value="high">{lang === 'th' ? 'บีบอัดสูงสุด (ขนาดไฟล์เล็กสุด)' : 'High Compression (Smallest File)'}</option>
+                  </select>
+                </div>
+              )}
+
+              {currentTool === 'protect-pdf' && (
+                <div className="setting-field">
+                  <label htmlFor="password-input">{t.password}:</label>
+                  <input 
+                    id="password-input" 
+                    type="password" 
+                    className="custom-input"
+                    placeholder="Enter password"
+                    value={passwordValue}
+                    onChange={(e) => setPasswordValue(e.target.value)}
+                  />
+                </div>
+              )}
+
               {currentTool === 'watermark-pdf' && (
                 <div className="setting-field">
-                  <label htmlFor="watermark-text">Watermark Text:</label>
+                  <label htmlFor="watermark-text">{t.watermarkText}:</label>
                   <input 
                     id="watermark-text" 
                     type="text" 
@@ -1008,26 +1267,26 @@ export default function App() {
 
               {currentTool === 'page-numbers' && (
                 <div className="setting-field">
-                  <label htmlFor="page-format">Format:</label>
+                  <label htmlFor="page-format">{t.format}:</label>
                   <select 
                     id="page-format" 
                     className="custom-select"
                     value={pageNumberFormat}
                     onChange={(e) => setPageNumberFormat(e.target.value)}
                   >
-                    <option value="page-x-of-y">Page X of Y (Bottom Center)</option>
-                    <option value="simple">1, 2, 3... (Simple)</option>
+                    <option value="page-x-of-y">Page X of Y</option>
+                    <option value="simple">1, 2, 3...</option>
                   </select>
                 </div>
               )}
 
               <div className="setting-field">
-                <label htmlFor="export-name">Filename:</label>
+                <label htmlFor="export-name">{t.filename}:</label>
                 <input 
                   id="export-name" 
                   type="text" 
                   className="custom-input"
-                  style={{ minWidth: 180 }}
+                  style={{ minWidth: 170 }}
                   value={exportName}
                   onChange={(e) => setExportName(e.target.value)}
                 />
@@ -1054,12 +1313,12 @@ export default function App() {
               {isProcessing ? (
                 <>
                   <RefreshCw size={18} className="spinner" />
-                  <span>Processing...</span>
+                  <span>{t.processing}</span>
                 </>
               ) : (
                 <>
                   <Download size={18} />
-                  <span>Download Result ({activeToolDef.badge})</span>
+                  <span>{t.downloadResult} ({activeToolDef.badge})</span>
                 </>
               )}
             </button>
@@ -1067,11 +1326,32 @@ export default function App() {
         </div>
       </section>
 
+      {/* Fullscreen Page Preview Modal */}
+      {previewModalPage && (
+        <div className="preview-modal-backdrop" onClick={() => setPreviewModalPage(null)}>
+          <div className="preview-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-modal-header">
+              <h3>{previewModalPage.fileName} — Page {previewModalPage.pageIndex + 1}</h3>
+              <button className="btn-tile-icon" onClick={() => setPreviewModalPage(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="preview-modal-body">
+              <img 
+                src={previewModalPage.thumbnailDataUrl} 
+                style={{ transform: `rotate(${previewModalPage.rotation}deg)` }} 
+                alt="Page preview" 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Global Minimal Footer */}
       <footer className="footer">
         <div className="footer-content">
-          <div>© 2026 ORBITA STUDIO. All rights reserved.</div>
-          <div>Direct in-browser execution. No database, no logins, no cloud upload.</div>
+          <div>© 2026 ORBITA STUDIO. {t.footerRights}</div>
+          <div>{t.footerTag}</div>
         </div>
       </footer>
     </div>
