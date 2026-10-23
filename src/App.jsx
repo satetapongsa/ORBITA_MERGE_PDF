@@ -163,7 +163,10 @@ export default function App() {
   // Initialize Sortable on file list
   useEffect(() => {
     if (fileListRef.current && loadedFiles.length > 0) {
-      if (fileSortableRef.current) fileSortableRef.current.destroy();
+      if (fileSortableRef.current) {
+        try { fileSortableRef.current.destroy(); } catch (_) {}
+        fileSortableRef.current = null;
+      }
       fileSortableRef.current = new Sortable(fileListRef.current, {
         animation: 180,
         handle: '.file-row-item',
@@ -191,14 +194,20 @@ export default function App() {
       });
     }
     return () => {
-      if (fileSortableRef.current) fileSortableRef.current.destroy();
+      if (fileSortableRef.current) {
+        try { fileSortableRef.current.destroy(); } catch (_) {}
+        fileSortableRef.current = null;
+      }
     };
   }, [loadedFiles]);
 
   // Initialize Sortable on page grid
   useEffect(() => {
     if (pagesGridRef.current && activePages.length > 0) {
-      if (pageSortableRef.current) pageSortableRef.current.destroy();
+      if (pageSortableRef.current) {
+        try { pageSortableRef.current.destroy(); } catch (_) {}
+        pageSortableRef.current = null;
+      }
       pageSortableRef.current = new Sortable(pagesGridRef.current, {
         animation: 200,
         handle: '.page-tile-card',
@@ -216,7 +225,10 @@ export default function App() {
       });
     }
     return () => {
-      if (pageSortableRef.current) pageSortableRef.current.destroy();
+      if (pageSortableRef.current) {
+        try { pageSortableRef.current.destroy(); } catch (_) {}
+        pageSortableRef.current = null;
+      }
     };
   }, [activePages]);
 
