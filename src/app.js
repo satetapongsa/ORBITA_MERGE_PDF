@@ -14,7 +14,7 @@ let loadedFiles = []; // Array of { id, file, name, size, pageCount, pdfDoc, pdf
 let activePages = []; // Array of { id, fileId, fileName, pageIndex, rotation, thumbnailDataUrl }
 
 // DOM Elements
-const modeTabs = document.querySelectorAll('.mode-tab');
+const toolTabs = document.querySelectorAll('.tool-tab-btn');
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
 const toolbar = document.getElementById('toolbar');
@@ -42,9 +42,9 @@ let pageSortableInstance = null;
 function initSortables() {
   if (fileList && !fileSortableInstance) {
     fileSortableInstance = new Sortable(fileList, {
-      animation: 150,
+      animation: 180,
       ghostClass: 'sortable-ghost',
-      handle: '.file-row',
+      handle: '.file-row-item',
       onEnd: handleFilesReordered
     });
   }
@@ -53,16 +53,16 @@ function initSortables() {
     pageSortableInstance = new Sortable(pagesGrid, {
       animation: 200,
       ghostClass: 'sortable-ghost',
-      handle: '.page-card',
+      handle: '.page-tile-card',
       onEnd: handlePagesReordered
     });
   }
 }
 
 // Mode Switcher
-modeTabs.forEach(tab => {
+toolTabs.forEach(tab => {
   tab.addEventListener('click', () => {
-    modeTabs.forEach(t => t.classList.remove('active'));
+    toolTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentMode = tab.dataset.mode;
     updateModeUI();
@@ -73,11 +73,11 @@ function updateModeUI() {
   if (currentMode === 'merge') {
     fileReorderSection.classList.remove('hidden');
     pngScaleGroup.classList.add('hidden');
-    btnExecuteText.textContent = 'เริ่มผสานและดาวน์โหลด PDF';
+    btnExecuteText.textContent = 'ผสานและสร้างไฟล์ PDF ทันที';
   } else {
     fileReorderSection.classList.add('hidden');
     pngScaleGroup.classList.remove('hidden');
-    btnExecuteText.textContent = 'เริ่มแปลงเป็นภาพ PNG (ZIP)';
+    btnExecuteText.textContent = 'เริ่มแปลงเป็นภาพ PNG (Ultra HD)';
   }
   checkExecuteAvailability();
 }
@@ -119,7 +119,7 @@ async function handleIncomingFiles(files) {
     return;
   }
 
-  showStatus('กำลังโหลดและสร้างพรีวิวหน้าเอกสาร...', 'loading');
+  showStatus('กำลังเรนเดอร์พรีวิวหน้าเอกสารด้วยความเร็วสูง...', 'loading');
 
   for (const file of pdfFiles) {
     const fileId = 'file_' + Math.random().toString(36).substr(2, 9);
@@ -144,7 +144,7 @@ async function handleIncomingFiles(files) {
       // Render thumbnail for each page
       for (let i = 1; i <= numPages; i++) {
         const page = await pdfJsDoc.getPage(i);
-        const viewport = page.getViewport({ scale: 0.35 });
+        const viewport = page.getViewport({ scale: 0.38 });
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.height = viewport.height;
@@ -203,15 +203,15 @@ function renderFileList() {
   fileList.innerHTML = '';
   loadedFiles.forEach((file, index) => {
     const row = document.createElement('div');
-    row.className = 'file-row';
+    row.className = 'file-row-item';
     row.dataset.fileId = file.id;
     row.innerHTML = `
-      <div class="file-left">
-        <span class="drag-handle">☰</span>
-        <span class="file-name">${index + 1}. ${file.name}</span>
-        <span class="file-meta">(${file.pageCount} หน้า • ${formatBytes(file.size)})</span>
+      <div class="file-details">
+        <span class="handle-icon">☰</span>
+        <span class="file-title">${index + 1}. ${file.name}</span>
+        <span class="file-badges">(${file.pageCount} หน้า • ${formatBytes(file.size)})</span>
       </div>
-      <button class="btn-icon-tiny delete" title="ลบไฟล์นี้">
+      <button class="btn-tile-icon delete" title="ลบไฟล์นี้">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -232,23 +232,25 @@ function renderPageGrid() {
   pagesGrid.innerHTML = '';
   activePages.forEach((page, index) => {
     const card = document.createElement('div');
-    card.className = 'page-card';
+    card.className = 'page-tile-card';
     card.dataset.pageId = page.id;
 
     card.innerHTML = `
-      <div class="thumb-preview-wrap">
+      <div class="page-preview-box">
         <img src="${page.thumbnailDataUrl}" style="transform: rotate(${page.rotation}deg);" alt="Page ${index + 1}">
       </div>
-      <div class="page-info-bar">
-        <span class="page-index-label">หน้า ${index + 1}</span>
-        <span class="page-src-label" title="${page.fileName}">${page.fileName}</span>
-        <div class="page-actions-overlay">
-          <button class="btn-icon-tiny rotate" title="หมุนหน้า 90°">
+      <div class="page-footer-info">
+        <div>
+          <span class="page-num-tag">#${index + 1}</span>
+          <span class="page-source-tag" title="${page.fileName}">${page.fileName}</span>
+        </div>
+        <div class="page-tile-actions">
+          <button class="btn-tile-icon rotate" title="หมุนหน้า 90°">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
             </svg>
           </button>
-          <button class="btn-icon-tiny delete" title="ลบหน้านี้">
+          <button class="btn-tile-icon delete" title="ลบหน้านี้">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -261,7 +263,7 @@ function renderPageGrid() {
     card.querySelector('.rotate').addEventListener('click', (e) => {
       e.stopPropagation();
       page.rotation = (page.rotation + 90) % 360;
-      const img = card.querySelector('.thumb-preview-wrap img');
+      const img = card.querySelector('.page-preview-box img');
       img.style.transform = `rotate(${page.rotation}deg)`;
     });
 
@@ -352,7 +354,7 @@ btnExecute.addEventListener('click', async () => {
 // PDF Merging with Custom Page Ordering & Rotations
 async function executeMergePDF() {
   showStatus('กำลังสร้างและจัดเรียงไฟล์ PDF ใหม่ตามลำดับที่คุณเลือก...', 'loading');
-  btnExecuteText.textContent = 'กำลังผสานเอกสาร...';
+  btnExecuteText.textContent = 'กำลังประมวลผลเอกสาร...';
 
   const mergedPdf = await PDFDocument.create();
 
@@ -388,18 +390,18 @@ async function executeMergePDF() {
   showStatus(`ผสานไฟล์ PDF สำเร็จเรียบร้อย (${activePages.length} หน้า)`, 'success');
 }
 
-// Convert PDF to PNG (High-DPI / Ultra HD) & Bundle as ZIP
+// Convert PDF to PNG (Ultra HD 300 DPI / Scale 4.17) & Bundle as ZIP
 async function executePdfToPng() {
-  const scale = parseFloat(pngScaleSelect.value) || 2.0;
-  showStatus(`กำลังแปลง ${activePages.length} หน้าเป็น PNG คุณภาพสูง...`, 'loading');
-  btnExecuteText.textContent = 'กำลังแปลงรูปภาพ...';
+  const scale = parseFloat(pngScaleSelect.value) || 4.17;
+  showStatus(`กำลังเรนเดอร์ภาพความละเอียดสูง ${activePages.length} หน้า...`, 'loading');
+  btnExecuteText.textContent = 'กำลังแปลงรูปภาพ Ultra HD...';
 
   const zip = new JSZip();
   const folder = zip.folder('png_pages');
 
   for (let i = 0; i < activePages.length; i++) {
     const pageItem = activePages[i];
-    btnExecuteText.textContent = `กำลังแปลงหน้า ${i + 1}/${activePages.length}...`;
+    btnExecuteText.textContent = `เรนเดอร์หน้า ${i + 1}/${activePages.length}...`;
 
     const fileObj = loadedFiles.find(f => f.id === pageItem.fileId);
     if (!fileObj) continue;
@@ -419,12 +421,12 @@ async function executePdfToPng() {
     folder.file(`page_${pageNumStr}.png`, blob);
   }
 
-  btnExecuteText.textContent = 'กำลังบีบอัดไฟล์ ZIP...';
+  btnExecuteText.textContent = 'กำลังสร้างไฟล์ ZIP...';
   const zipContent = await zip.generateAsync({ type: 'blob' });
-  const exportName = (exportNameInput.value.trim() || 'orbita-document') + '_png.zip';
+  const exportName = (exportNameInput.value.trim() || 'orbita-export') + '_png.zip';
   saveAs(zipContent, exportName);
 
-  showStatus(`แปลงไฟล์เป็นภาพ PNG ทั้งหมด ${activePages.length} หน้า สำเร็จเรียบร้อย!`, 'success');
+  showStatus(`แปลงไฟล์เป็นภาพ PNG (${scale >= 4 ? '300 DPI Ultra HD' : 'HD'}) ${activePages.length} หน้า สำเร็จเรียบร้อย!`, 'success');
 }
 
 // Utility Helpers
@@ -437,7 +439,7 @@ function formatBytes(bytes) {
 }
 
 function showStatus(message, type) {
-  statusPill.className = `status-pill ${type}`;
+  statusPill.className = `notify-pill ${type}`;
   if (type === 'loading') {
     statusPill.innerHTML = `<span class="spinner"></span> <span>${message}</span>`;
   } else {

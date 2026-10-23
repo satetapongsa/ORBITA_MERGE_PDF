@@ -3,81 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ORBITA Converter Studio - ระบบจัดการและแปลงไฟล์ PDF / PNG อัจฉริยะ</title>
-  <meta name="description" content="เว็บแอปพลิเคชันแปลงไฟล์ PDF เป็น PNG คุณภาพสูง และรวมไฟล์ PDF จัดเรียงลำดับไฟล์และหน้าได้อย่างอิสระตามใจนึก">
+  <title>ORBITA Studio — Next-Gen File & PDF Processing Suite</title>
+  <meta name="description" content="แพลตฟอร์มแปลงไฟล์และจัดการเอกสารระดับโลก แปลง PDF เป็นภาพ PNG คมชัดระดับ Ultra HD 300 DPI และรวมไฟล์ PDF จัดเรียงลำดับหน้าอิสระ ปลอดภัย 100% Client-side">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
-  <div class="app-wrapper">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="brand-badge">⚡ ORBITA NEXT-GEN CONVERTER STUDIO</div>
-      <h1>ระบบจัดการและ<span class="gradient-text">แปลงไฟล์อัจฉริยะ</span></h1>
-      <p>แปลง PDF เป็นภาพ PNG ความคมชัดสูง หรือรวมเอกสาร PDF หลายฉบับ พร้อมระบบลากสลับเรียงลำดับไฟล์และหน้ากระดาษได้อิสระ</p>
-    </header>
+  <!-- Ambient Cosmic Lights Background -->
+  <div class="bg-mesh">
+    <div class="mesh-orb orb-1"></div>
+    <div class="mesh-orb orb-2"></div>
+    <div class="mesh-orb orb-3"></div>
+    <div class="bg-grid-overlay"></div>
+  </div>
 
-    <!-- Navigation Modes -->
-    <nav class="mode-nav">
-      <button class="mode-tab active" id="tab-merge" data-mode="merge">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="12" y1="18" x2="12" y2="12"></line>
-          <line x1="9" y1="15" x2="15" y2="15"></line>
+  <!-- Global Header Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <span class="logo-text">ORBITA</span>
+        <span class="logo-badge">PRO STUDIO</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#studio">สตูดิโอเครื่องมือ</a></li>
+        <li><a href="#features">จุดเด่นระบบ</a></li>
+        <li><a href="#security">ความปลอดภัย</a></li>
+      </ul>
+
+      <a href="#studio" class="nav-cta">
+        <span>เริ่มต้นใช้งานฟรี</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"></path>
         </svg>
-        <span>รวมไฟล์ PDF & เรียงหน้าอิสระ</span>
-      </button>
+      </a>
+    </div>
+  </header>
 
-      <button class="mode-tab" id="tab-pdf-to-png" data-mode="pdf-to-png">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <circle cx="8.5" cy="8.5" r="1.5"></circle>
-          <polyline points="21 15 16 10 5 21"></polyline>
-        </svg>
-        <span>แปลง PDF เป็น PNG (HD)</span>
-      </button>
-    </nav>
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-pill">
+      <span>🚀 Client-Side Processing • ปลอดภัยสูงสุด เอกสารไม่หลุดออกจากเครื่องคุณ</span>
+    </div>
+    <h1 class="hero-title">
+      แปลงไฟล์ระดับพรีเมียม <span class="gradient-text">เร็ว คมชัด สั่งการได้ดั่งใจนึก</span>
+    </h1>
+    <p class="hero-desc">
+      สตูดิโอประมวลผล PDF และแปลงภาพ PNG ความละเอียดสูงสุด 300 DPI พร้อมนวัตกรรมลากสลับจัดเรียงลำดับไฟล์และหน้ากระดาษได้อย่างอิสระ ลื่นไหล ไร้ขีดจำกัด
+    </p>
 
-    <!-- Workspace Main Container -->
-    <main class="workspace-card">
+    <!-- Trust Markers -->
+    <div class="trust-badges">
+      <div class="trust-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>ประมวลผล 100% บนเบราว์เซอร์</span>
+      </div>
+      <div class="trust-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Ultra HD 300 DPI PNG Quality</span>
+      </div>
+      <div class="trust-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Drag & Drop Visual Reorder</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Studio Workstation Section -->
+  <section class="studio-section" id="studio">
+    <div class="studio-wrapper">
+      
+      <!-- Studio Tabs Switcher -->
+      <div class="tool-switcher">
+        <button class="tool-tab-btn active" id="tab-merge" data-mode="merge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <span>รวมไฟล์ PDF & จัดเรียงหน้า</span>
+        </button>
+
+        <button class="tool-tab-btn" id="tab-pdf-to-png" data-mode="pdf-to-png">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span>แปลง PDF เป็น PNG (Ultra HD)</span>
+        </button>
+      </div>
+
       <!-- Drag & Drop Zone -->
-      <div class="dropzone" id="dropzone">
-        <div class="upload-icon-circle">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div class="dropzone-zone" id="dropzone">
+        <div class="drop-icon-box">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
         </div>
-        <h3 id="dropzone-title">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</h3>
-        <p id="dropzone-subtitle">รองรับไฟล์ PDF สำหรับรวมเล่มและแปลงไฟล์</p>
+        <h3 class="drop-title" id="dropzone-title">คลิกเพื่อเลือกไฟล์ หรือลากเอกสาร PDF มาวาง</h3>
+        <p class="drop-sub" id="dropzone-subtitle">รองรับไฟล์ PDF หลายไฟล์พร้อมกัน ไม่จำกัดขนาด ประมวลผลในเครื่องทันที</p>
         <input type="file" id="file-input" multiple accept="application/pdf" style="display: none;">
       </div>
 
-      <!-- Toolbar when files exist -->
-      <div class="toolbar-bar hidden" id="toolbar">
-        <div class="toolbar-info">
-          <span>ไฟล์ที่โหลดแล้ว <span class="badge-counter" id="file-count">0</span></span>
-          <span>จำนวนหน้าทั้งหมด <span class="badge-counter" id="page-count">0 หน้า</span></span>
+      <!-- Action & Counter Toolbar -->
+      <div class="control-toolbar hidden" id="toolbar">
+        <div class="stat-group">
+          <div class="stat-chip">
+            <span>ไฟล์ที่เลือก:</span>
+            <span class="chip-highlight" id="file-count">0 ไฟล์</span>
+          </div>
+          <div class="stat-chip">
+            <span>จำนวนหน้ารวม:</span>
+            <span class="chip-highlight" id="page-count">0 หน้า</span>
+          </div>
         </div>
-        <div class="toolbar-actions">
-          <button class="btn-sm" id="btn-add-more">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+        <div class="btn-group">
+          <button class="btn-action-sm" id="btn-add-more">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            เพิ่มไฟล์อีก
+            เพิ่มไฟล์
           </button>
-          <button class="btn-sm" id="btn-rotate-all">
+          <button class="btn-action-sm" id="btn-rotate-all">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
             </svg>
-            หมุนทุกหน้า 90°
+            หมุนทุกหน้า +90°
           </button>
-          <button class="btn-sm danger" id="btn-clear-all">
+          <button class="btn-action-sm danger" id="btn-clear-all">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -87,51 +155,96 @@
         </div>
       </div>
 
-      <!-- File Reordering Section (Shown in Merge Mode) -->
+      <!-- File Queue Reordering Section -->
       <div id="file-reorder-section" class="hidden">
-        <div class="section-title">
-          <span>📁 ลำดับไฟล์ (ลากเพื่อสลับคิวไฟล์ก่อนหลัง)</span>
+        <div class="section-headline">
+          <span>📁 สลับคิวไฟล์ก่อน-หลัง</span>
+          <span class="hint-pill">ลากแถวเพื่อสลับลำดับการผสานเอกสาร</span>
         </div>
-        <div class="file-items-container" id="file-list"></div>
+        <div class="file-draggable-list" id="file-list"></div>
       </div>
 
-      <!-- Page Reordering Section (Interactive Grid) -->
+      <!-- Visual Page Reordering Grid -->
       <div id="page-reorder-section" class="hidden">
-        <div class="section-title">
-          <span>📑 จัดเรียงลำดับหน้ากระดาษ (ลากสลับหน้า หมุน หรือลบหน้าได้อิสระ)</span>
+        <div class="section-headline">
+          <span>📑 จัดเรียงลำดับหน้าตามใจนึก (Visual Grid)</span>
+          <span class="hint-pill">ลากแผ่นการ์ดเพื่อสลับหน้า • คลิกหมุน หรือลบหน้าที่ไม่ต้องการ</span>
         </div>
-        <div class="page-grid" id="pages-grid"></div>
+        <div class="page-canvas-grid" id="pages-grid"></div>
       </div>
 
-      <!-- Conversion & Export Options -->
-      <div class="options-bar hidden" id="options-bar">
-        <div class="option-group" id="png-scale-group">
-          <label for="png-scale-select">คุณภาพรูปภาพ (DPI / Resolution):</label>
-          <select id="png-scale-select" class="option-select">
-            <option value="1.5">มาตรฐาน (150 DPI)</option>
-            <option value="2.0" selected>คมชัดสูง HD (200 DPI)</option>
-            <option value="3.0">คมชัดสูงสุด Ultra HD (300 DPI)</option>
+      <!-- Settings & Resolution Bar -->
+      <div class="settings-bar hidden" id="options-bar">
+        <div class="setting-field" id="png-scale-group">
+          <label for="png-scale-select">คุณภาพเรนเดอร์ PNG:</label>
+          <select id="png-scale-select" class="custom-select">
+            <option value="1.5">Standard HD (150 DPI)</option>
+            <option value="2.0" selected>High Definition (200 DPI)</option>
+            <option value="4.17">Ultra HD 300 DPI Studio Quality</option>
           </select>
         </div>
 
-        <div class="option-group">
-          <label for="export-name-input">ชื่อไฟล์ผลลัพธ์:</label>
-          <input type="text" id="export-name-input" class="option-select" style="min-width: 220px;" value="orbita-document">
+        <div class="setting-field">
+          <label for="export-name-input">ตั้งชื่อไฟล์บันทึก:</label>
+          <input type="text" id="export-name-input" class="custom-input" style="min-width: 240px;" value="orbita-export">
         </div>
       </div>
 
-      <!-- Execution Action Panel -->
-      <div class="execute-bar">
-        <div id="status-pill" class="status-pill hidden"></div>
-        <button id="btn-execute" class="btn-execute" disabled>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"></polyline>
+      <!-- Master Action Execution Panel -->
+      <div class="action-panel">
+        <div id="status-pill" class="notify-pill hidden"></div>
+        <button id="btn-execute" class="master-btn" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span id="btn-execute-text">เริ่มผสานและสร้างไฟล์ PDF</span>
+          <span id="btn-execute-text">ผสานและสร้างไฟล์ PDF ทันที</span>
         </button>
       </div>
-    </main>
-  </div>
+
+    </div>
+  </section>
+
+  <!-- World-Class Features Section -->
+  <section class="features-section" id="features">
+    <div class="section-tagline">WHY ORBITA STUDIO</div>
+    <h2 class="section-header">ที่สุดแห่งเทคโนโลยีจัดการเอกสารระดับสากล</h2>
+
+    <div class="features-grid">
+      <div class="feature-box">
+        <div class="feature-icon-wrapper">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        </div>
+        <h3>เรนเดอร์ Ultra HD 300 DPI</h3>
+        <p>แปลงหน้ากระดาษ PDF ออกมาเป็นภาพ PNG ระดับคมชัดสูงสุด เก็บทุกรายละเอียด ฟอนต์ ตัวอักษร และตารางไม่มีแตก เหมาะสำหรับงานสิ่งพิมพ์ระดับมืออาชีพ</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon-wrapper">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <h3>จัดเรียงหน้าตามใจนึก</h3>
+        <p>ระบบ Visual Page Canvas สลับหน้าเอกสาร หมุนองศา ลบหน้าเสีย หรือนำเข้าไฟล์หลายฉบับมาประสานจัดเรียงคิวได้ดั่งใจด้วยอินเตอร์เฟซลากวางที่ลื่นไหล</p>
+      </div>
+
+      <div class="feature-box" id="security">
+        <div class="feature-icon-wrapper">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </div>
+        <h3>ความปลอดภัยสูงสุด (Zero Data Leak)</h3>
+        <p>ไม่มีการอัปโหลดไฟล์ของคุณไปยังเซิร์ฟเวอร์ภายนอก เอกสารถูกประมวลผลบนเครื่องของคุณแบบ 100% ผ่าน WebAssembly & Client Engine ปลอดภัยระดับองค์กร</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Global Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>© 2026 ORBITA CONVERTER STUDIO. All rights reserved.</div>
+      <div>Designed for Next-Generation Document Processing.</div>
+    </div>
+  </footer>
 
   <script type="module" src="/src/app.js"></script>
 </body>
