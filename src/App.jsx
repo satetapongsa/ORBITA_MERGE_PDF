@@ -12,7 +12,6 @@ import {
   Image as ImageIcon, 
   FileText, 
   Split, 
-  ShieldCheck, 
   Table, 
   UploadCloud, 
   RotateCw, 
@@ -26,108 +25,113 @@ import {
   AlertCircle, 
   Plus, 
   RefreshCw, 
-  Cpu, 
-  FileCode,
-  FileCheck2,
-  Lock,
-  Crop,
   Hash,
   EyeOff
 } from 'lucide-react';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-// Full Professional Suite of 10 Client-Side Conversion Utilities
+// 10 Colorful Suite Tools with dedicated visual branding
 const CONVERTER_TOOLS = [
   {
     id: 'merge',
     category: 'Organize',
-    name: 'Merge & Organize PDF',
-    desc: 'Combine multiple PDFs and reorder pages effortlessly with visual drag & drop',
+    name: 'Merge PDF',
+    badge: 'PDF → PDF',
+    desc: 'Combine multiple PDF files in any order',
     accept: 'application/pdf',
     icon: FileStack,
-    tag: 'Popular'
+    color: '#6366f1' // Indigo
   },
   {
     id: 'pdf-to-png',
     category: 'Convert from PDF',
-    name: 'PDF to PNG (Ultra HD)',
-    desc: 'Render PDF pages into crystal clear Ultra HD 300 DPI PNG images',
+    name: 'PDF to PNG',
+    badge: 'PDF → PNG',
+    desc: 'Ultra HD 300 DPI crystal clear images',
     accept: 'application/pdf',
     icon: ImageIcon,
-    tag: '300 DPI'
+    color: '#06b6d4' // Cyan
   },
   {
     id: 'pdf-to-jpg',
     category: 'Convert from PDF',
     name: 'PDF to JPG',
-    desc: 'Extract and convert every PDF page into crisp, compressed JPG image files',
+    badge: 'PDF → JPG',
+    desc: 'High speed compressed image pages',
     accept: 'application/pdf',
     icon: ImageIcon,
-    tag: 'Fast'
+    color: '#f59e0b' // Amber
   },
   {
     id: 'image-to-pdf',
     category: 'Convert to PDF',
     name: 'Images to PDF',
-    desc: 'Convert JPG, PNG, WEBP images into an organized, single PDF document',
+    badge: 'IMG → PDF',
+    desc: 'Convert JPG, PNG, WEBP into one document',
     accept: 'image/png, image/jpeg, image/jpg, image/webp',
     icon: Layers,
-    tag: 'Zero Loss'
+    color: '#ec4899' // Pink
   },
   {
     id: 'split-pdf',
     category: 'Organize',
-    name: 'Split & Extract Pages',
-    desc: 'Extract individual pages or selected ranges into separate PDF documents',
+    name: 'Split PDF',
+    badge: 'PDF → Pages',
+    desc: 'Extract individual pages into single PDFs',
     accept: 'application/pdf',
     icon: Split,
-    tag: 'Batch'
+    color: '#8b5cf6' // Violet
   },
   {
     id: 'rotate-pdf',
     category: 'Organize',
-    name: 'Rotate PDF Document',
-    desc: 'Permanently rotate PDF orientation by 90, 180, or 270 degrees',
+    name: 'Rotate PDF',
+    badge: 'Rotate 90°',
+    desc: 'Permanently change orientation of pages',
     accept: 'application/pdf',
     icon: RotateCw,
-    tag: 'Orientation'
+    color: '#10b981' // Emerald
   },
   {
     id: 'pdf-to-text',
     category: 'Convert from PDF',
-    name: 'PDF to Text (TXT)',
-    desc: 'Extract all textual content from PDF into structured, editable text',
+    name: 'PDF to Text',
+    badge: 'PDF → TXT',
+    desc: 'Extract all readable text into editable TXT',
     accept: 'application/pdf',
     icon: FileText,
-    tag: 'Extraction'
+    color: '#3b82f6' // Blue
   },
   {
     id: 'excel-to-pdf',
     category: 'Convert to PDF',
-    name: 'Excel / CSV to PDF',
-    desc: 'Convert XLSX spreadsheets or CSV tables directly into clean PDF reports',
+    name: 'Excel to PDF',
+    badge: 'XLSX → PDF',
+    desc: 'Transform sheets and tables to PDF report',
     accept: '.xlsx, .xls, .csv',
     icon: Table,
-    tag: 'Spreadsheet'
+    color: '#14b8a6' // Teal
   },
   {
     id: 'page-numbers',
     category: 'Edit PDF',
-    name: 'Add Page Numbers',
-    desc: 'Stamp clean, professional page numbering (Page X of Y) onto any PDF document',
+    name: 'Page Numbers',
+    badge: 'Add Numbers',
+    desc: 'Stamp Page X of Y onto all pages',
     accept: 'application/pdf',
     icon: Hash,
-    tag: 'Pro'
+    color: '#f97316' // Orange
   },
   {
     id: 'watermark-pdf',
     category: 'Edit PDF',
-    name: 'Watermark PDF',
-    desc: 'Apply customizable security watermark stamps across all document pages',
+    name: 'Watermark',
+    badge: 'Security',
+    desc: 'Stamp customizable text watermark stamp',
     accept: 'application/pdf',
     icon: EyeOff,
-    tag: 'Security'
+    color: '#e11d48' // Rose
   }
 ];
 
@@ -246,7 +250,7 @@ export default function App() {
     if (fileArray.length === 0) return;
 
     setIsProcessing(true);
-    setStatus({ text: 'Processing files locally at lightning speed...', type: 'loading' });
+    setStatus({ text: 'Processing files instantly on your device...', type: 'loading' });
 
     try {
       if (currentTool === 'image-to-pdf') {
@@ -315,7 +319,7 @@ export default function App() {
 
     setLoadedFiles(prev => [...prev, ...newFiles]);
     setActivePages(prev => [...prev, ...newPages]);
-    setStatus({ text: `Loaded ${newPages.length} pages ready for instant conversion.`, type: 'success' });
+    setStatus({ text: `Loaded ${newPages.length} pages ready.`, type: 'success' });
   };
 
   // Upload handler for Images
@@ -358,14 +362,14 @@ export default function App() {
 
     setLoadedFiles(prev => [...prev, ...newFiles]);
     setActivePages(prev => [...prev, ...newPages]);
-    setStatus({ text: `Loaded ${validImages.length} images. Drag cards to reorder page flow!`, type: 'success' });
+    setStatus({ text: `Loaded ${validImages.length} images.`, type: 'success' });
   };
 
   // Upload handler for Excel / CSV
   const handleExcelUploads = async (excelFiles) => {
     const validSheets = excelFiles.filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv'));
     if (validSheets.length === 0) {
-      setStatus({ text: 'Please select Excel (.xlsx, .xls) or CSV files.', type: 'error' });
+      setStatus({ text: 'Please select Excel or CSV files.', type: 'error' });
       return;
     }
 
@@ -384,7 +388,7 @@ export default function App() {
     }
 
     setLoadedFiles(prev => [...prev, ...newFiles]);
-    setStatus({ text: `Workbook parsed successfully (${validSheets.length} file ready to convert).`, type: 'success' });
+    setStatus({ text: `Workbook parsed successfully.`, type: 'success' });
   };
 
   // Page Actions
@@ -457,7 +461,7 @@ export default function App() {
 
   // 1. Merge & Rotate PDF
   const runMergePDF = async () => {
-    setStatus({ text: 'Compiling merged PDF document with custom page sequence...', type: 'loading' });
+    setStatus({ text: 'Compiling merged PDF document...', type: 'loading' });
     const mergedPdf = await PDFDocument.create();
     const pdfLibCache = new Map();
 
@@ -483,25 +487,23 @@ export default function App() {
     saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
     confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-    setStatus({ text: `Merged PDF created successfully (${activePages.length} pages)!`, type: 'success' });
+    setStatus({ text: `Merged PDF generated successfully!`, type: 'success' });
   };
 
-  // 2 & 3. PDF to PNG / JPG (Ultra HD 300 DPI)
+  // 2 & 3. PDF to PNG / JPG
   const runPdfToImages = async (format = 'png') => {
     const scale = parseFloat(pngScale) || 4.17;
     const quality = parseFloat(jpgQuality) || 0.92;
     const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
     const ext = format === 'jpeg' ? 'jpg' : 'png';
 
-    setStatus({ text: `Rendering high-resolution ${ext.toUpperCase()} pages...`, type: 'loading' });
+    setStatus({ text: `Rendering ${ext.toUpperCase()} pages...`, type: 'loading' });
 
     const zip = new JSZip();
     const folder = zip.folder(`${ext}_pages`);
 
     for (let i = 0; i < activePages.length; i++) {
       const p = activePages[i];
-      setStatus({ text: `Rendering page ${i + 1} of ${activePages.length} (${ext.toUpperCase()})...`, type: 'loading' });
-
       const fileObj = loadedFiles.find(f => f.id === p.fileId);
       if (!fileObj) continue;
 
@@ -513,7 +515,6 @@ export default function App() {
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
 
-      // Fill white background for JPG
       if (format === 'jpeg') {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -526,18 +527,18 @@ export default function App() {
       folder.file(`page_${numStr}.${ext}`, blob);
     }
 
-    setStatus({ text: `Compressing ${ext.toUpperCase()} package into ZIP...`, type: 'loading' });
+    setStatus({ text: `Compressing into ZIP...`, type: 'loading' });
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const filename = (exportName.trim() || 'orbita-export') + `_${ext}.zip`;
     saveAs(zipBlob, filename);
 
     confetti({ particleCount: 110, spread: 80, origin: { y: 0.6 } });
-    setStatus({ text: `Converted ${activePages.length} pages to ${ext.toUpperCase()} successfully!`, type: 'success' });
+    setStatus({ text: `Converted to ${ext.toUpperCase()} successfully!`, type: 'success' });
   };
 
   // 4. Images to PDF
   const runImagesToPdf = async () => {
-    setStatus({ text: 'Assembling high-res images into a unified PDF...', type: 'loading' });
+    setStatus({ text: 'Assembling images into PDF...', type: 'loading' });
     const pdfDoc = await PDFDocument.create();
 
     for (const p of activePages) {
@@ -561,12 +562,12 @@ export default function App() {
     saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-    setStatus({ text: `Images converted into PDF successfully (${activePages.length} images)!`, type: 'success' });
+    setStatus({ text: `Images converted into PDF successfully!`, type: 'success' });
   };
 
   // 5. Split PDF
   const runSplitPDF = async () => {
-    setStatus({ text: 'Splitting document pages into individual PDFs...', type: 'loading' });
+    setStatus({ text: 'Splitting document pages...', type: 'loading' });
     const zip = new JSZip();
     const folder = zip.folder('split_pages');
 
@@ -597,12 +598,12 @@ export default function App() {
     saveAs(zipBlob, filename);
 
     confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-    setStatus({ text: `Successfully split document into ${activePages.length} separate PDFs!`, type: 'success' });
+    setStatus({ text: `Successfully split document into separate PDFs!`, type: 'success' });
   };
 
   // 6. PDF to Text
   const runPdfToText = async () => {
-    setStatus({ text: 'Extracting clean textual content from PDF...', type: 'loading' });
+    setStatus({ text: 'Extracting text from PDF...', type: 'loading' });
     let fullText = `=== EXTRACTED CONTENT: ${loadedFiles.map(f => f.name).join(', ')} ===\n\n`;
 
     for (let i = 0; i < activePages.length; i++) {
@@ -622,12 +623,12 @@ export default function App() {
     saveAs(blob, filename);
 
     confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
-    setStatus({ text: `Extracted all text content (${activePages.length} pages) into TXT!`, type: 'success' });
+    setStatus({ text: `Extracted text content into TXT!`, type: 'success' });
   };
 
   // 7. Excel to PDF
   const runExcelToPdf = async () => {
-    setStatus({ text: 'Formatting spreadsheet into a clean PDF table report...', type: 'loading' });
+    setStatus({ text: 'Generating PDF table report...', type: 'loading' });
     const pdfDoc = await PDFDocument.create();
 
     for (const f of loadedFiles) {
@@ -635,11 +636,11 @@ export default function App() {
       const sheet = f.workbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      const page = pdfDoc.addPage([595, 842]); // A4
+      const page = pdfDoc.addPage([595, 842]);
       const { height } = page.getSize();
       let y = height - 50;
 
-      page.drawText(`Spreadsheet Report: ${f.name} [${sheetName}]`, {
+      page.drawText(`Report: ${f.name} [${sheetName}]`, {
         x: 40,
         y,
         size: 13
@@ -666,12 +667,12 @@ export default function App() {
     saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
     confetti({ particleCount: 80, spread: 65, origin: { y: 0.6 } });
-    setStatus({ text: 'Spreadsheet transformed into PDF table document successfully!', type: 'success' });
+    setStatus({ text: 'Spreadsheet transformed into PDF table document!', type: 'success' });
   };
 
   // 8. Add Page Numbers
   const runAddPageNumbers = async () => {
-    setStatus({ text: 'Stamping professional page numbers onto document...', type: 'loading' });
+    setStatus({ text: 'Stamping page numbers...', type: 'loading' });
     const pdfDoc = await PDFDocument.load(loadedFiles[0].arrayBuffer);
     const pages = pdfDoc.getPages();
     const total = pages.length;
@@ -699,7 +700,7 @@ export default function App() {
 
   // 9. Add Watermark
   const runAddWatermark = async () => {
-    setStatus({ text: 'Stamping security watermark across all pages...', type: 'loading' });
+    setStatus({ text: 'Stamping security watermark...', type: 'loading' });
     const pdfDoc = await PDFDocument.load(loadedFiles[0].arrayBuffer);
     const pages = pdfDoc.getPages();
     const stamp = watermarkText.trim() || 'CONFIDENTIAL';
@@ -720,7 +721,7 @@ export default function App() {
     saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
     confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-    setStatus({ text: `Security watermark '${stamp}' stamped across ${pages.length} pages!`, type: 'success' });
+    setStatus({ text: `Watermark stamped successfully!`, type: 'success' });
   };
 
   const formatBytes = (bytes) => {
@@ -737,77 +738,33 @@ export default function App() {
       <div className="bg-mesh">
         <div className="mesh-orb orb-1"></div>
         <div className="mesh-orb orb-2"></div>
-        <div className="mesh-orb orb-3"></div>
         <div className="bg-grid-overlay"></div>
       </div>
 
-      {/* Global Navigation Header */}
+      {/* Global Clean Navigation Header */}
       <header className="navbar">
         <div className="nav-container">
           <a href="#" className="nav-logo">
             <div className="logo-icon">
-              <Zap size={20} color="#fff" />
+              <Zap size={18} color="#fff" />
             </div>
             <span className="logo-text">ORBITA</span>
-            <span className="logo-badge">PRO SUITE</span>
+            <span className="logo-badge">STUDIO</span>
           </a>
 
-          <div className="nav-status-badge">
-            <div className="status-dot"></div>
-            <span>No Account Needed • 100% In-Browser Privacy</span>
+          <div className="nav-right-tag">
+            <span>Client-side Engine:</span>
+            <strong>Direct In-Browser RAM</strong>
           </div>
-
-          <ul className="nav-links">
-            <li><a href="#tools">Tools Hub</a></li>
-            <li><a href="#features">Zero-Cloud Engine</a></li>
-            <li><a href="#security">Enterprise Security</a></li>
-          </ul>
-
-          <a href="#studio" className="nav-cta">
-            <span>Instant Convert</span>
-            <Sparkles size={14} />
-          </a>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-pill">
-          <Cpu size={14} />
-          <span>No Sign-up • No Data Uploaded • Zero Server Latency</span>
-        </div>
-        <h1 className="hero-title">
-          World-Class Document & <span className="gradient-text">File Processing Suite</span>
-        </h1>
-        <p className="hero-desc">
-          Instant file conversion that outperforms traditional web converters. Render 300 DPI Ultra HD PNGs, merge & reorder visual PDF pages, extract text, and stamp watermarks—100% executed on your device RAM without cloud uploads.
-        </p>
+      {/* Clean Minimal Hero Header */}
+      <section className="clean-hero">
+        <h1>All-in-One <span className="gradient-text">File Converter</span></h1>
+        <p>Instant file conversions directly in your browser. Choose any tool below to start.</p>
 
-        <div className="trust-badges">
-          <div className="trust-item">
-            <CheckCircle2 size={14} />
-            <span>100% Free Forever</span>
-          </div>
-          <div className="trust-item">
-            <CheckCircle2 size={14} />
-            <span>Zero Data Leakage (No Cloud Upload)</span>
-          </div>
-          <div className="trust-item">
-            <CheckCircle2 size={14} />
-            <span>No Login or Registration Required</span>
-          </div>
-          <div className="trust-item">
-            <CheckCircle2 size={14} />
-            <span>Ultra HD 300 DPI Rendering</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Tools Selection Hub */}
-      <section className="tools-hub" id="tools">
-        <div className="tools-hub-title">CHOOSE CONVERSION SUITE UTILITY (10 TOOLS)</div>
-        
-        {/* Category Pills */}
+        {/* Category Filter Pills */}
         <div className="category-filter-bar">
           {CATEGORIES.map(cat => (
             <button
@@ -819,7 +776,10 @@ export default function App() {
             </button>
           ))}
         </div>
+      </section>
 
+      {/* Colorful Tool Cards Grid */}
+      <section className="tools-hub">
         <div className="tools-grid">
           {filteredTools.map(t => {
             const Icon = t.icon;
@@ -831,10 +791,10 @@ export default function App() {
                 onClick={() => switchTool(t.id)}
               >
                 <div className="tool-chip-top">
-                  <div className="tool-chip-icon">
-                    <Icon size={16} />
+                  <div className="tool-color-icon" style={{ backgroundColor: t.color }}>
+                    <Icon size={20} />
                   </div>
-                  {t.tag && <span className="tool-chip-tag">{t.tag}</span>}
+                  <span className="tool-from-to-badge">{t.badge}</span>
                 </div>
                 <div className="tool-chip-name">{t.name}</div>
                 <div className="tool-chip-desc">{t.desc}</div>
@@ -847,13 +807,17 @@ export default function App() {
       {/* Main Studio Workstation */}
       <section className="studio-section" id="studio">
         <div className="studio-wrapper">
-          {/* Active Tool Header Badge */}
+          {/* Active Tool Header Banner */}
           <div className="studio-header-bar">
-            <div className="active-tool-badge">
-              <activeToolDef.icon size={16} />
-              <span>{activeToolDef.name}</span>
+            <div className="active-tool-banner">
+              <div className="active-tool-banner-icon" style={{ backgroundColor: activeToolDef.color }}>
+                <activeToolDef.icon size={20} />
+              </div>
+              <div>
+                <h2>{activeToolDef.name}</h2>
+                <p>{activeToolDef.desc} • ({activeToolDef.badge})</p>
+              </div>
             </div>
-            <div className="tool-tagline">{activeToolDef.desc}</div>
           </div>
 
           {/* Upload Dropzone */}
@@ -869,10 +833,10 @@ export default function App() {
             }}
           >
             <div className="drop-icon-box">
-              <UploadCloud size={32} />
+              <UploadCloud size={30} />
             </div>
-            <h3 className="drop-title">Drop your files here, or click to browse</h3>
-            <p className="drop-sub">Zero file upload • Handled directly on your browser RAM • Max speed</p>
+            <h3 className="drop-title">Select files or drop them here</h3>
+            <p className="drop-sub">Processed in your browser RAM • Zero wait • 100% private</p>
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -896,7 +860,7 @@ export default function App() {
                 </div>
                 {activePages.length > 0 && (
                   <div className="stat-chip">
-                    <span>Total Pages:</span>
+                    <span>Pages:</span>
                     <span className="chip-highlight">{activePages.length}</span>
                   </div>
                 )}
@@ -925,8 +889,8 @@ export default function App() {
           {loadedFiles.length > 0 && (currentTool === 'merge' || currentTool === 'rotate-pdf') && (
             <div className="file-reorder-section">
               <div className="section-headline">
-                <span>📁 File Sequence Order</span>
-                <span className="hint-pill">Drag items to rearrange merge order</span>
+                <span>📁 File Order</span>
+                <span className="hint-pill">Drag items to rearrange queue</span>
               </div>
               <div className="file-draggable-list" ref={fileListRef}>
                 {loadedFiles.map((file, idx) => (
@@ -953,8 +917,8 @@ export default function App() {
           {activePages.length > 0 && (
             <div className="page-reorder-section">
               <div className="section-headline">
-                <span>📑 Interactive Page Canvas</span>
-                <span className="hint-pill">Drag cards to reorder • Rotate • Remove individual pages</span>
+                <span>📑 Interactive Page Order</span>
+                <span className="hint-pill">Drag to reorder • Rotate • Delete individual pages</span>
               </div>
               <div className="page-canvas-grid" ref={pagesGridRef}>
                 {activePages.map((page, idx) => (
@@ -994,12 +958,12 @@ export default function App() {
             </div>
           )}
 
-          {/* Dynamic Settings Bar based on Active Tool */}
+          {/* Output Settings Bar */}
           {loadedFiles.length > 0 && (
             <div className="settings-bar">
               {currentTool === 'pdf-to-png' && (
                 <div className="setting-field">
-                  <label htmlFor="png-scale">Rendering Resolution:</label>
+                  <label htmlFor="png-scale">Resolution:</label>
                   <select 
                     id="png-scale" 
                     className="custom-select"
@@ -1015,23 +979,23 @@ export default function App() {
 
               {currentTool === 'pdf-to-jpg' && (
                 <div className="setting-field">
-                  <label htmlFor="jpg-quality">Compression Quality:</label>
+                  <label htmlFor="jpg-quality">Quality:</label>
                   <select 
                     id="jpg-quality" 
                     className="custom-select"
                     value={jpgQuality}
                     onChange={(e) => setJpgQuality(e.target.value)}
                   >
-                    <option value="0.75">Medium File Size (75%)</option>
-                    <option value="0.90">High Quality (90%)</option>
-                    <option value="0.98">Maximum Quality (98%)</option>
+                    <option value="0.75">Medium (75%)</option>
+                    <option value="0.90">High (90%)</option>
+                    <option value="0.98">Maximum (98%)</option>
                   </select>
                 </div>
               )}
 
               {currentTool === 'watermark-pdf' && (
                 <div className="setting-field">
-                  <label htmlFor="watermark-text">Watermark Stamp Text:</label>
+                  <label htmlFor="watermark-text">Watermark Text:</label>
                   <input 
                     id="watermark-text" 
                     type="text" 
@@ -1044,26 +1008,26 @@ export default function App() {
 
               {currentTool === 'page-numbers' && (
                 <div className="setting-field">
-                  <label htmlFor="page-format">Number Format:</label>
+                  <label htmlFor="page-format">Format:</label>
                   <select 
                     id="page-format" 
                     className="custom-select"
                     value={pageNumberFormat}
                     onChange={(e) => setPageNumberFormat(e.target.value)}
                   >
-                    <option value="page-x-of-y">Page X of Y (Footer Center)</option>
+                    <option value="page-x-of-y">Page X of Y (Bottom Center)</option>
                     <option value="simple">1, 2, 3... (Simple)</option>
                   </select>
                 </div>
               )}
 
               <div className="setting-field">
-                <label htmlFor="export-name">Export Filename:</label>
+                <label htmlFor="export-name">Filename:</label>
                 <input 
                   id="export-name" 
                   type="text" 
                   className="custom-input"
-                  style={{ minWidth: 200 }}
+                  style={{ minWidth: 180 }}
                   value={exportName}
                   onChange={(e) => setExportName(e.target.value)}
                 />
@@ -1095,7 +1059,7 @@ export default function App() {
               ) : (
                 <>
                   <Download size={18} />
-                  <span>Execute & Download ({activeToolDef.name})</span>
+                  <span>Download Result ({activeToolDef.badge})</span>
                 </>
               )}
             </button>
@@ -1103,51 +1067,11 @@ export default function App() {
         </div>
       </section>
 
-      {/* Features Showcase Highlights */}
-      <section className="features-section" id="features">
-        <div className="section-tagline">ZERO-CLOUD IN-BROWSER ARCHITECTURE</div>
-        <h2 className="section-header">Engineered to Outperform Traditional Cloud Converters</h2>
-
-        <div className="features-grid">
-          <div className="feature-box">
-            <div className="feature-icon-wrapper">
-              <Zap size={22} />
-            </div>
-            <h3>Ultra HD 300 DPI Rendering</h3>
-            <p>Export pixel-perfect graphics up to 300 DPI with vector-level line fidelity, sharp typography, and crystal clear tabular data without any artifacting.</p>
-          </div>
-
-          <div className="feature-box">
-            <div className="feature-icon-wrapper">
-              <Layers size={22} />
-            </div>
-            <h3>Interactive Page Canvas</h3>
-            <p>Enjoy total freedom with our interactive page grid: drag and drop pages to rearrange, batch-rotate orientations, and trim unnecessary pages effortlessly.</p>
-          </div>
-
-          <div className="feature-box" id="security">
-            <div className="feature-icon-wrapper">
-              <ShieldCheck size={22} />
-            </div>
-            <h3>Zero Data Leakage Security</h3>
-            <p>100% Client-Side Engine: Your sensitive legal documents, contracts, and financial spreadsheets never leave your browser or hit external cloud servers.</p>
-          </div>
-
-          <div className="feature-box">
-            <div className="feature-icon-wrapper">
-              <Cpu size={22} />
-            </div>
-            <h3>No Account or Sign-Up Required</h3>
-            <p>No subscriptions, no accounts, and no hidden limits. Start processing and converting documents right away with zero onboarding barriers.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Global Footer */}
+      {/* Global Minimal Footer */}
       <footer className="footer">
         <div className="footer-content">
-          <div>© 2026 ORBITA CONVERTER STUDIO. All rights reserved.</div>
-          <div>Powered by React 18 & WebAssembly • 100% Private Client-Side Document Processing.</div>
+          <div>© 2026 ORBITA STUDIO. All rights reserved.</div>
+          <div>Direct in-browser execution. No database, no logins, no cloud upload.</div>
         </div>
       </footer>
     </div>
