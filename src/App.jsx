@@ -33,7 +33,13 @@ import {
   Moon,
   Languages,
   Maximize2,
-  X
+  X,
+  Search,
+  PenTool,
+  LayoutGrid,
+  Copy,
+  Check,
+  Eraser
 } from 'lucide-react';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -53,7 +59,7 @@ const TRANSLATIONS = {
     clearAll: 'Clear All',
     fileOrder: 'File Order',
     pageOrder: 'Interactive Page Order',
-    dragHint: 'Drag to reorder • Rotate • Click card to preview • Delete pages',
+    dragHint: 'Drag to reorder • Rotate • Duplicate • Delete pages',
     filename: 'Filename',
     resolution: 'Resolution',
     quality: 'Quality',
@@ -69,7 +75,20 @@ const TRANSLATIONS = {
     organize: 'Organize',
     convertFrom: 'Convert from PDF',
     convertTo: 'Convert to PDF',
-    editPdf: 'Edit PDF'
+    editPdf: 'Edit PDF',
+    searchPlaceholder: 'Search tools... (Press "/" to focus)',
+    signSignature: 'Draw Digital Signature',
+    clearSignature: 'Clear Signature',
+    penColor: 'Pen Color',
+    penSize: 'Stroke',
+    signPage: 'Stamp on Page',
+    signPos: 'Position',
+    duplicatePage: 'Duplicate',
+    copyText: 'Copy Text',
+    copied: 'Copied!',
+    extractedPreview: 'Live Extracted Text Preview',
+    toolsFound: 'tools available',
+    noToolsFound: 'No matching tools found for'
   },
   th: {
     tagline: 'ระบบจัดการและแปลงไฟล์อัจฉริยะ',
@@ -84,7 +103,7 @@ const TRANSLATIONS = {
     clearAll: 'ล้างทั้งหมด',
     fileOrder: 'ลำดับไฟล์',
     pageOrder: 'จัดเรียงลำดับหน้า',
-    dragHint: 'ลากสลับหน้า • หมุน • คลิกที่ภาพเพื่อดูขยายใหญ่ • ลบหน้าเสีย',
+    dragHint: 'ลากสลับหน้า • หมุน • คัดลอกหน้า • ลบหน้าเสีย',
     filename: 'ชื่อไฟล์ผลลัพธ์',
     resolution: 'ความละเอียด',
     quality: 'คุณภาพ',
@@ -100,11 +119,24 @@ const TRANSLATIONS = {
     organize: 'จัดการ PDF',
     convertFrom: 'แปลงออกจาก PDF',
     convertTo: 'แปลงเป็น PDF',
-    editPdf: 'แก้ไข PDF'
+    editPdf: 'แก้ไข PDF',
+    searchPlaceholder: 'ค้นหาเครื่องมือ... (กด "/" เพื่อค้นหา)',
+    signSignature: 'วาดลายเซ็นดิจิทัล',
+    clearSignature: 'ล้างลายเซ็น',
+    penColor: 'สีปากกา',
+    penSize: 'ความหนาเส้น',
+    signPage: 'ประทับลงหน้า',
+    signPos: 'ตำแหน่งลายเซ็น',
+    duplicatePage: 'คัดลอกหน้านี้',
+    copyText: 'คัดลอกข้อความ',
+    copied: 'คัดลอกสำเร็จ!',
+    extractedPreview: 'ตัวอย่างข้อความที่สกัดได้แบบสด',
+    toolsFound: 'เครื่องมือพร้อมใช้งาน',
+    noToolsFound: 'ไม่พบเครื่องมือที่ตรงกับคำค้นหา'
   }
 };
 
-// 12 Professional Suite Tools with colorful branding
+// 14 Professional Suite Tools with colorful branding
 const CONVERTER_TOOLS = [
   {
     id: 'merge',
@@ -117,6 +149,30 @@ const CONVERTER_TOOLS = [
     accept: 'application/pdf',
     icon: FileStack,
     color: '#6366f1'
+  },
+  {
+    id: 'organize-pdf',
+    category: 'Organize',
+    name: 'Organize PDF',
+    nameTh: 'จัดระเบียบลบหน้า PDF',
+    badge: 'Reorder & Delete',
+    desc: 'Reorder, duplicate, delete and rotate individual pages',
+    descTh: 'ลากสลับหน้า ลบหน้าซ้ำ คัดลอกหน้า และหมุนหน้าอิสระ',
+    accept: 'application/pdf',
+    icon: LayoutGrid,
+    color: '#8b5cf6'
+  },
+  {
+    id: 'sign-pdf',
+    category: 'Edit PDF',
+    name: 'Sign PDF',
+    nameTh: 'เซ็นลายเซ็น PDF',
+    badge: 'Signature',
+    desc: 'Draw or stamp digital signatures onto any page',
+    descTh: 'วาดลายเซ็นสด ปรับสี/ขนาด แล้วประทับตราบนหน้า PDF',
+    accept: 'application/pdf',
+    icon: PenTool,
+    color: '#10b981'
   },
   {
     id: 'pdf-to-png',
@@ -275,6 +331,24 @@ export default function App() {
   const [exportName, setExportName] = useState('orbita-export');
   const [isDragOver, setIsDragOver] = useState(false);
   
+  // Search & Spotlight State
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+
+  // Live Extracted Text Preview
+  const [extractedText, setExtractedText] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Digital Signature States
+  const sigCanvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [sigColor, setSigColor] = useState('#0f172a');
+  const [sigWidth, setSigWidth] = useState(3);
+  const [sigPage, setSigPage] = useState('1');
+  const [sigPosition, setSigPosition] = useState('bottom-right');
+  const [sigScale, setSigScale] = useState(1);
+  const [hasSignature, setHasSignature] = useState(false);
+
   // Fullscreen Preview Modal
   const [previewModalPage, setPreviewModalPage] = useState(null);
 
@@ -296,10 +370,64 @@ export default function App() {
     }
   }, [theme]);
 
+  // Keyboard shortcut '/' to focus search & 'Esc' to clear
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearchQuery('');
+        searchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Live Text Extractor effect for pdf-to-text tool
+  useEffect(() => {
+    if (currentTool === 'pdf-to-text' && activePages.length > 0) {
+      let isCancelled = false;
+      const extract = async () => {
+        let full = '';
+        for (let i = 0; i < activePages.length; i++) {
+          const p = activePages[i];
+          const fileObj = loadedFiles.find(f => f.id === p.fileId);
+          if (!fileObj || !fileObj.pdfJsDoc) continue;
+          try {
+            const page = await fileObj.pdfJsDoc.getPage(p.pageIndex + 1);
+            const content = await page.getTextContent();
+            const text = content.items.map(it => it.str).join(' ');
+            full += `--- Page ${i + 1} (${p.fileName}) ---\n${text}\n\n`;
+          } catch (_) {}
+        }
+        if (!isCancelled) setExtractedText(full.trim());
+      };
+      extract();
+      return () => { isCancelled = true; };
+    } else {
+      setExtractedText('');
+    }
+  }, [currentTool, activePages, loadedFiles]);
+
   const filteredTools = useMemo(() => {
-    if (selectedCategory === 'All Tools') return CONVERTER_TOOLS;
-    return CONVERTER_TOOLS.filter(item => item.category === selectedCategory);
-  }, [selectedCategory]);
+    return CONVERTER_TOOLS.filter(item => {
+      const matchCat = selectedCategory === 'All Tools' || item.category === selectedCategory;
+      if (!matchCat) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.nameTh.toLowerCase().includes(q) ||
+        item.desc.toLowerCase().includes(q) ||
+        item.descTh.toLowerCase().includes(q) ||
+        item.badge.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
+      );
+    });
+  }, [selectedCategory, searchQuery]);
 
   // Initialize Sortable on file list
   useEffect(() => {
@@ -534,6 +662,20 @@ export default function App() {
     setActivePages(prev => prev.filter(p => p.id !== pageId));
   };
 
+  const duplicatePage = (pageId) => {
+    const targetIdx = activePages.findIndex(p => p.id === pageId);
+    if (targetIdx === -1) return;
+    const pageToDup = activePages[targetIdx];
+    const newPage = {
+      ...pageToDup,
+      id: 'page_' + Math.random().toString(36).substring(2, 9),
+      fileName: pageToDup.fileName + ' (Copy)'
+    };
+    const updated = [...activePages];
+    updated.splice(targetIdx + 1, 0, newPage);
+    setActivePages(updated);
+  };
+
   const deleteFile = (fileId) => {
     setLoadedFiles(prev => prev.filter(f => f.id !== fileId));
     setActivePages(prev => prev.filter(p => p.fileId !== fileId));
@@ -545,6 +687,62 @@ export default function App() {
     setStatus({ text: '', type: '' });
   };
 
+  // Signature Canvas Drawing Handlers
+  const startDrawing = (e) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY ?? (e.touches && e.touches[0].clientY);
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.strokeStyle = sigColor;
+    ctx.lineWidth = sigWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY ?? (e.touches && e.touches[0].clientY);
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setHasSignature(true);
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  };
+
+  // Copy extracted text
+  const handleCopyText = async () => {
+    if (!extractedText) return;
+    try {
+      await navigator.clipboard.writeText(extractedText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (_) {}
+  };
+
   // Master Conversion Router
   const executeConversion = async () => {
     setIsProcessing(true);
@@ -553,6 +751,12 @@ export default function App() {
         case 'merge':
         case 'rotate-pdf':
           await runMergePDF();
+          break;
+        case 'organize-pdf':
+          await runOrganizePDF();
+          break;
+        case 'sign-pdf':
+          await runSignPDF();
           break;
         case 'pdf-to-png':
           await runPdfToImages('png');
@@ -919,6 +1123,118 @@ export default function App() {
     setStatus({ text: `Watermark stamped successfully!`, type: 'success' });
   };
 
+  // 12. Organize PDF (Reorder, Rotate, Duplicate, Delete)
+  const runOrganizePDF = async () => {
+    if (activePages.length === 0) {
+      setStatus({ 
+        text: lang === 'th' ? 'ไม่มีหน้าเอกสารเหลืออยู่' : 'No pages remaining to export.', 
+        type: 'error' 
+      });
+      return;
+    }
+
+    setStatus({ text: lang === 'th' ? 'กำลังสร้างไฟล์ PDF ที่จัดระเบียบใหม่...' : 'Building organized PDF document...', type: 'loading' });
+
+    const pdfDoc = await PDFDocument.create();
+    const pdfLibCache = new Map();
+
+    for (const f of loadedFiles) {
+      const doc = await PDFDocument.load(f.arrayBuffer);
+      pdfLibCache.set(f.id, doc);
+    }
+
+    for (const p of activePages) {
+      const sourceDoc = pdfLibCache.get(p.fileId);
+      if (sourceDoc) {
+        const [copied] = await pdfDoc.copyPages(sourceDoc, [p.pageIndex]);
+        if (p.rotation !== 0) {
+          copied.setRotation(degrees((copied.getRotation().angle + p.rotation) % 360));
+        }
+        pdfDoc.addPage(copied);
+      }
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const filename = (exportName.trim() || 'orbita-organized') + '.pdf';
+    saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+
+    confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+    setStatus({ text: lang === 'th' ? 'จัดระเบียบหน้า PDF เรียบร้อยแล้ว!' : 'Organized PDF exported successfully!', type: 'success' });
+  };
+
+  // 13. Sign PDF (Digital Signature Stamp)
+  const runSignPDF = async () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas || !hasSignature) {
+      setStatus({ 
+        text: lang === 'th' ? 'กรุณาวาดลายเซ็นก่อนประทับตรา' : 'Please draw your signature first.', 
+        type: 'error' 
+      });
+      return;
+    }
+
+    if (loadedFiles.length === 0) {
+      setStatus({ 
+        text: lang === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF ที่ต้องการเซ็น' : 'Please upload a PDF file to sign.', 
+        type: 'error' 
+      });
+      return;
+    }
+
+    setStatus({ text: lang === 'th' ? 'กำลังประทับลายเซ็นลงในเอกสาร PDF...' : 'Stamping digital signature onto PDF...', type: 'loading' });
+
+    // Export signature canvas to transparent PNG
+    const sigDataUrl = canvas.toDataURL('image/png');
+    const sigImageBytes = await fetch(sigDataUrl).then(res => res.arrayBuffer());
+
+    const pdfDoc = await PDFDocument.load(loadedFiles[0].arrayBuffer);
+    const sigImage = await pdfDoc.embedPng(sigImageBytes);
+
+    const baseWidth = 140 * sigScale;
+    const baseHeight = (canvas.height / canvas.width) * baseWidth;
+
+    const totalPages = pdfDoc.getPageCount();
+    const targetIndices = sigPage === 'all' 
+      ? Array.from({ length: totalPages }, (_, i) => i) 
+      : [Math.min(Math.max(0, parseInt(sigPage, 10) - 1), totalPages - 1)];
+
+    for (const pageIdx of targetIndices) {
+      const page = pdfDoc.getPage(pageIdx);
+      const { width, height } = page.getSize();
+
+      let x = 40;
+      let y = 40;
+
+      if (sigPosition === 'bottom-right') {
+        x = width - baseWidth - 40;
+        y = 40;
+      } else if (sigPosition === 'bottom-left') {
+        x = 40;
+        y = 40;
+      } else if (sigPosition === 'bottom-center') {
+        x = (width - baseWidth) / 2;
+        y = 40;
+      } else if (sigPosition === 'top-right') {
+        x = width - baseWidth - 40;
+        y = height - baseHeight - 40;
+      }
+
+      page.drawImage(sigImage, {
+        x,
+        y,
+        width: baseWidth,
+        height: baseHeight
+      });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const filename = (exportName.trim() || 'orbita-signed') + '.pdf';
+    saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+
+    confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+    setStatus({ text: lang === 'th' ? 'เซ็นเอกสาร PDF เรียบร้อยแล้ว!' : 'PDF signed successfully!', type: 'success' });
+  };
+
   const formatBytes = (bytes) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -995,28 +1311,71 @@ export default function App() {
 
       {/* Colorful Tool Cards Grid */}
       <section className="tools-hub">
-        <div className="tools-grid">
-          {filteredTools.map(item => {
-            const Icon = item.icon;
-            const isActive = item.id === currentTool;
-            return (
+        <div className="tools-hub-header">
+          <div className="search-box-wrapper">
+            <Search size={16} className="search-icon" />
+            <input 
+              ref={searchInputRef}
+              type="text" 
+              className="tools-search-input" 
+              placeholder={t.searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery ? (
               <button 
-                key={item.id}
-                className={`tool-chip ${isActive ? 'active' : ''}`}
-                onClick={() => switchTool(item.id)}
+                type="button"
+                className="search-clear-btn" 
+                onClick={() => setSearchQuery('')}
+                title="Clear Search"
               >
-                <div className="tool-chip-top">
-                  <div className="tool-color-icon" style={{ backgroundColor: item.color }}>
-                    <Icon size={20} />
-                  </div>
-                  <span className="tool-from-to-badge">{item.badge}</span>
-                </div>
-                <div className="tool-chip-name">{lang === 'th' ? item.nameTh : item.name}</div>
-                <div className="tool-chip-desc">{lang === 'th' ? item.descTh : item.desc}</div>
+                <X size={14} />
               </button>
-            );
-          })}
+            ) : (
+              <kbd className="search-kbd-hint">/</kbd>
+            )}
+          </div>
+          <span className="tools-counter-badge">
+            {filteredTools.length} {t.toolsFound}
+          </span>
         </div>
+
+        {filteredTools.length === 0 ? (
+          <div className="no-tools-found">
+            <AlertCircle size={28} />
+            <p>{t.noToolsFound} "{searchQuery}"</p>
+            <button 
+              type="button" 
+              className="category-pill active" 
+              onClick={() => { setSearchQuery(''); setSelectedCategory('All Tools'); }}
+            >
+              {lang === 'th' ? 'ล้างการค้นหา' : 'Reset Search'}
+            </button>
+          </div>
+        ) : (
+          <div className="tools-grid">
+            {filteredTools.map(item => {
+              const Icon = item.icon;
+              const isActive = item.id === currentTool;
+              return (
+                <button 
+                  key={item.id}
+                  className={`tool-chip ${isActive ? 'active' : ''}`}
+                  onClick={() => switchTool(item.id)}
+                >
+                  <div className="tool-chip-top">
+                    <div className="tool-color-icon" style={{ backgroundColor: item.color }}>
+                      <Icon size={20} />
+                    </div>
+                    <span className="tool-from-to-badge">{item.badge}</span>
+                  </div>
+                  <div className="tool-chip-name">{lang === 'th' ? item.nameTh : item.name}</div>
+                  <div className="tool-chip-desc">{lang === 'th' ? item.descTh : item.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Main Studio Workstation */}
@@ -1101,7 +1460,7 @@ export default function App() {
           )}
 
           {/* File Queue Draggable Section */}
-          {loadedFiles.length > 0 && (currentTool === 'merge' || currentTool === 'rotate-pdf') && (
+          {loadedFiles.length > 0 && (currentTool === 'merge' || currentTool === 'rotate-pdf' || currentTool === 'organize-pdf') && (
             <div className="file-reorder-section">
               <div className="section-headline">
                 <span>📁 {t.fileOrder}</span>
@@ -1159,6 +1518,13 @@ export default function App() {
                       </div>
                       <div className="page-tile-actions">
                         <button 
+                          className="btn-tile-icon duplicate" 
+                          title={t.duplicatePage}
+                          onClick={(e) => { e.stopPropagation(); duplicatePage(page.id); }}
+                        >
+                          <Plus size={12} />
+                        </button>
+                        <button 
                           className="btn-tile-icon rotate" 
                           title="Rotate 90°"
                           onClick={(e) => { e.stopPropagation(); rotatePage(page.id); }}
@@ -1177,6 +1543,161 @@ export default function App() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Digital Signature Studio Panel */}
+          {loadedFiles.length > 0 && currentTool === 'sign-pdf' && (
+            <div className="signature-studio-panel">
+              <div className="signature-panel-title">
+                <PenTool size={18} />
+                <span>{t.signSignature}</span>
+              </div>
+
+              {/* Canvas Drawing Area */}
+              <div className="signature-canvas-container">
+                <canvas 
+                  ref={sigCanvasRef}
+                  width={420}
+                  height={160}
+                  className="signature-canvas"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
+                {!hasSignature && (
+                  <div className="signature-placeholder-hint">
+                    <span>✍️ {lang === 'th' ? 'ลากเมาส์หรือใช้นิ้ววาดลายเซ็นที่นี่' : 'Draw your signature here'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div className="signature-controls-row">
+                <div className="sig-control-group">
+                  <label>{t.penColor}:</label>
+                  <div className="sig-color-palette">
+                    {[
+                      { color: '#0f172a', name: 'Black' },
+                      { color: '#1d4ed8', name: 'Blue' },
+                      { color: '#dc2626', name: 'Red' }
+                    ].map(c => (
+                      <button
+                        key={c.color}
+                        type="button"
+                        className={`sig-color-dot ${sigColor === c.color ? 'active' : ''}`}
+                        style={{ backgroundColor: c.color }}
+                        onClick={() => setSigColor(c.color)}
+                        title={c.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sig-control-group">
+                  <label>{t.penSize}:</label>
+                  <div className="sig-width-pills">
+                    {[
+                      { w: 2, label: 'Fine' },
+                      { w: 3, label: 'Med' },
+                      { w: 5, label: 'Bold' }
+                    ].map(s => (
+                      <button
+                        key={s.w}
+                        type="button"
+                        className={`sig-pill-btn ${sigWidth === s.w ? 'active' : ''}`}
+                        onClick={() => setSigWidth(s.w)}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button type="button" className="sig-clear-btn" onClick={clearSignature}>
+                  <Eraser size={14} />
+                  <span>{t.clearSignature}</span>
+                </button>
+              </div>
+
+              {/* Placement Settings */}
+              <div className="settings-bar" style={{ marginTop: '0.85rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                <div className="setting-field">
+                  <label htmlFor="sig-page">{t.signPage}:</label>
+                  <select 
+                    id="sig-page" 
+                    className="custom-select"
+                    value={sigPage}
+                    onChange={(e) => setSigPage(e.target.value)}
+                  >
+                    {activePages.map((_, i) => (
+                      <option key={i + 1} value={String(i + 1)}>
+                        {lang === 'th' ? `หน้า ${i + 1}` : `Page ${i + 1}`}
+                      </option>
+                    ))}
+                    <option value="all">{lang === 'th' ? 'ทุกหน้า' : 'All Pages'}</option>
+                  </select>
+                </div>
+
+                <div className="setting-field">
+                  <label htmlFor="sig-position">{t.signPos}:</label>
+                  <select 
+                    id="sig-position" 
+                    className="custom-select"
+                    value={sigPosition}
+                    onChange={(e) => setSigPosition(e.target.value)}
+                  >
+                    <option value="bottom-right">{lang === 'th' ? 'ขวาล่าง (มาตรฐาน)' : 'Bottom Right (Standard)'}</option>
+                    <option value="bottom-center">{lang === 'th' ? 'กึ่งกลางล่าง' : 'Bottom Center'}</option>
+                    <option value="bottom-left">{lang === 'th' ? 'ซ้ายล่าง' : 'Bottom Left'}</option>
+                    <option value="top-right">{lang === 'th' ? 'ขวาบน' : 'Top Right'}</option>
+                  </select>
+                </div>
+
+                <div className="setting-field">
+                  <label htmlFor="sig-scale">{lang === 'th' ? 'ขนาดลายเซ็น' : 'Size'}:</label>
+                  <select 
+                    id="sig-scale" 
+                    className="custom-select"
+                    value={sigScale}
+                    onChange={(e) => setSigScale(parseFloat(e.target.value))}
+                  >
+                    <option value="0.75">{lang === 'th' ? 'ขนาดเล็ก (75%)' : 'Small (75%)'}</option>
+                    <option value="1">{lang === 'th' ? 'ปกติ (100%)' : 'Normal (100%)'}</option>
+                    <option value="1.35">{lang === 'th' ? 'ขนาดใหญ่ (135%)' : 'Large (135%)'}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Live Extracted Text Preview Card */}
+          {loadedFiles.length > 0 && currentTool === 'pdf-to-text' && extractedText && (
+            <div className="text-extractor-card">
+              <div className="text-extractor-header">
+                <div className="text-extractor-title">
+                  <FileText size={16} />
+                  <span>{t.extractedPreview}</span>
+                </div>
+                <div className="text-extractor-actions">
+                  <span className="text-stats-badge">
+                    {extractedText.split(/\s+/).filter(Boolean).length} words • {extractedText.length} chars
+                  </span>
+                  <button 
+                    type="button"
+                    className="btn-copy-text"
+                    onClick={handleCopyText}
+                  >
+                    {isCopied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                    <span>{isCopied ? t.copied : t.copyText}</span>
+                  </button>
+                </div>
+              </div>
+              <pre className="extracted-text-content">{extractedText}</pre>
             </div>
           )}
 
