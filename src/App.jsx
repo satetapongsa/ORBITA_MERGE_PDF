@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import { PDFDocument, degrees } from 'pdf-lib';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
