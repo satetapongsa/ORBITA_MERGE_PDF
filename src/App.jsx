@@ -936,32 +936,7 @@ export default function App() {
         <div className="bg-grid-overlay"></div>
       </div>
 
-      {/* Top Category Filter Bar (Above Navbar) */}
-      <section className="top-category-nav">
-        <div className="category-filter-bar">
-          {CATEGORIES.map(cat => {
-            let label = cat;
-            if (lang === 'th') {
-              if (cat === 'All Tools') label = t.allTools;
-              if (cat === 'Organize') label = t.organize;
-              if (cat === 'Convert from PDF') label = t.convertFrom;
-              if (cat === 'Convert to PDF') label = t.convertTo;
-              if (cat === 'Edit PDF') label = t.editPdf;
-            }
-            return (
-              <button
-                key={cat}
-                className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Global Clean Navigation Header */}
+      {/* Global Clean Navigation Header with Inline Category Pills */}
       <header className="navbar">
         <div className="nav-container">
           <a href="#" className="nav-logo">
@@ -970,6 +945,29 @@ export default function App() {
             </div>
             <span className="logo-text">ORBITA</span>
           </a>
+
+          {/* Category Filter Pills (Same line as ORBITA) */}
+          <div className="nav-category-pills">
+            {CATEGORIES.map(cat => {
+              let label = cat;
+              if (lang === 'th') {
+                if (cat === 'All Tools') label = t.allTools;
+                if (cat === 'Organize') label = t.organize;
+                if (cat === 'Convert from PDF') label = t.convertFrom;
+                if (cat === 'Convert to PDF') label = t.convertTo;
+                if (cat === 'Edit PDF') label = t.editPdf;
+              }
+              return (
+                <button
+                  key={cat}
+                  className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
 
           <div className="nav-controls">
             {/* Language Switcher */}
