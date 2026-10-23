@@ -9,11 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "canvas-confetti": "^1.9.4",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.2",
     "lucide": "^0.475.0",
+    "lucide-react": "^1.61.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "sortablejs": "^1.15.7"
   },
   "devDependencies": {
